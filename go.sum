@@ -1,8 +1,0 @@
-github.com/dlclark/regexp2 v1.4.0 h1:F1rxgk7p4uKjwIQxBs9oAXe5CqrXlCduYEJvrF4u93E=
-github.com/dlclark/regexp2 v1.4.0/go.mod h1:2pZnwuY/m+8K6iRw6wQdMtk+rH5tNGR1i55kozfMjCc=
-github.com/i-am-the-slime/go-ffi v0.0.0-20250107191809-8aebdb8aad2e h1:1XdE49AEa1EpmMPOVMqY7jVaqGUssrdHuSz6gY4LYP0=
-github.com/i-am-the-slime/go-ffi v0.0.0-20250107191809-8aebdb8aad2e/go.mod h1:G20T9FXpgn6M3s1pnXDAOTwAXKQgDwl/uhMLfo5h6PA=
-github.com/joprice/purescript-native-go-ffi v0.0.0-20230319170919-df001aa880fd/go.mod h1:1TvaJdjRUFHRmoLQ5QvpR1pnivyd7eBjNA+j1PuktBM=
-github.com/purescript-native/go-runtime v0.1.0/go.mod h1:Pl7TR9c9Al8GMlY/R2D7joWjlQuTiB9eBN2a9aXd6GQ=
-github.com/purescript-native/go-runtime v0.1.2 h1:vxVmLXojzc6nkP29qMxHmEd6iwolF309yP/FskRY88Y=
-github.com/purescript-native/go-runtime v0.1.2/go.mod h1:Pl7TR9c9Al8GMlY/R2D7joWjlQuTiB9eBN2a9aXd6GQ=
