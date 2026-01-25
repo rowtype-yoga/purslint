@@ -1,6 +1,11 @@
 // LSP stdio FFI for JavaScript
 import * as fs from 'fs';
-import * as $Maybe from '../Data.Maybe/index.js';
+
+// PureScript Maybe representation that works for both standard and optimized backends
+// Standard: { value0: x } for Just, Nothing.value for Nothing
+// Optimized: { tag: 1, _1: x } for Just, { tag: 0 } for Nothing
+const mkJust = (x) => ({ tag: 1, _1: x, value0: x });
+const mkNothing = { tag: 0 };
 
 // Buffer for reading LSP messages
 let buffer = '';
@@ -30,7 +35,7 @@ export const readMessage = () => {
   // First check if we already have a complete message in buffer
   let msg = tryParseMessage();
   if (msg !== null) {
-    return $Maybe.Just.create(msg);
+    return mkJust(msg);
   }
   
   // Need to read more data synchronously from stdin
@@ -43,18 +48,18 @@ export const readMessage = () => {
       
       if (bytesRead === 0) {
         // EOF
-        return $Maybe.Nothing.value;
+        return mkNothing;
       }
       
       buffer += chunk.toString('utf8', 0, bytesRead);
       
       msg = tryParseMessage();
       if (msg !== null) {
-        return $Maybe.Just.create(msg);
+        return mkJust(msg);
       }
     }
   } catch (e) {
-    return $Maybe.Nothing.value;
+    return mkNothing;
   } finally {
     fs.closeSync(fd);
   }
@@ -75,9 +80,9 @@ export const logMessage = (msg) => () => {
 // Parse JSON string to Foreign (returns Maybe Foreign)
 export const parseJSON = (str) => {
   try {
-    return $Maybe.Just.create(JSON.parse(str));
+    return mkJust(JSON.parse(str));
   } catch (e) {
-    return $Maybe.Nothing.value;
+    return mkNothing;
   }
 };
 

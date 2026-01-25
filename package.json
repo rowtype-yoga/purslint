@@ -3,13 +3,21 @@
   "version": "0.1.0",
   "description": "A linter for PureScript",
   "type": "module",
-  "main": "output/Main/index.js",
   "bin": {
-    "purelint": "./bin/purelint.js"
+    "purelint": "./dist/purelint.js",
+    "purelint-lsp": "./dist/purelint-lsp.js"
   },
   "scripts": {
-    "build": "purs compile 'lib/**/*.purs' 'bin/purelint-cli/**/*.purs' '.spago/**/*.purs'",
-    "test": "node --experimental-vm-modules test.js"
+    "build:cli": "spago build -p purelint-cli --output output-cli",
+    "build:lsp": "spago build -p purelint-lsp --output output-lsp",
+    "build": "npm run build:cli && npm run build:lsp",
+    "bundle:cli": "purs-backend-es bundle-app --corefn-dir output-cli --main Main --platform node --to dist/purelint.js --int-tags",
+    "bundle:lsp": "purs-backend-es bundle-app --corefn-dir output-lsp --main Main.LSP --platform node --to dist/purelint-lsp.js --int-tags",
+    "bundle": "npm run bundle:cli && npm run bundle:lsp",
+    "dist": "npm run build && npm run bundle",
+    "test": "spago test",
+    "dev:cli": "node bin/purelint.js",
+    "dev:lsp": "node bin/purelint-lsp.js"
   },
   "keywords": [
     "purescript",
@@ -18,5 +26,8 @@
   "license": "MIT",
   "dependencies": {
     "spago": "^0.93.45"
+  },
+  "devDependencies": {
+    "purs-backend-es": "^1.4.3"
   }
 }
