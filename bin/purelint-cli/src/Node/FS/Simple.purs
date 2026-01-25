@@ -1,4 +1,4 @@
-module Node.FS.Sync where
+module Node.FS.Simple where
 
 import Prelude
 import Effect (Effect)

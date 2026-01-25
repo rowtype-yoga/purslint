@@ -11,6 +11,12 @@
     "build": "purs compile 'lib/**/*.purs' 'bin/purelint-cli/**/*.purs' '.spago/**/*.purs'",
     "test": "node --experimental-vm-modules test.js"
   },
-  "keywords": ["purescript", "linter"],
-  "license": "MIT"
+  "keywords": [
+    "purescript",
+    "linter"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "spago": "^0.93.45"
+  }
 }

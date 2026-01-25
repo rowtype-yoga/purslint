@@ -10,8 +10,8 @@ import Data.Newtype (unwrap)
 import Data.String.CodeUnits as String
 import Effect (Effect)
 import Effect.Console (log)
-import Node.FS.Sync as FS
-import Node.Process as Process
+import Node.FS.Simple as FS
+import Node.CLI as Process
 import Purelint.Config (defaultConfig, filterRules, parseConfig)
 import Purelint.Fix (applyAllFixes)
 import Purelint.Rule (Rule)

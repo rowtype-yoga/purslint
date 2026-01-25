@@ -1,4 +1,4 @@
-module Node.Process where
+module Node.CLI where
 
 import Prelude
 import Effect (Effect)
