@@ -1,0 +1,28 @@
+# PureScript
+bower_components/
+node_modules/
+.pulp-cache/
+output/
+output-es/
+generated-docs/
+.psc-package/
+.psc*
+.purs*
+.psa*
+.spago
+
+# Go build artifacts
+main_cli.go
+main_lsp.go
+test_main.go
+debug_main.go
+
+# Binaries (root level only)
+/purelint
+/purelint-lsp
+/test-runner
+/debug-runner
+/Main
+
+# Zed extension build
+zed-extension/target/

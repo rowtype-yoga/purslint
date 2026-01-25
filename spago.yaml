@@ -1,0 +1,21 @@
+workspace:
+  packageSet:
+    registry: 71.0.0
+  extraPackages: {}
+  backend:
+    cmd: psgo
+
+package:
+  name: purelint-tests
+  dependencies:
+    - console
+    - effect
+    - either
+    - maybe
+    - newtype
+    - prelude
+    - purelint
+    - arrays
+  test:
+    main: Test.Main
+    dependencies: []

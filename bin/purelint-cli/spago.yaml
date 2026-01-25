@@ -1,0 +1,13 @@
+package:
+  name: purelint-cli
+  dependencies:
+    - arrays
+    - console
+    - effect
+    - either
+    - foldable-traversable
+    - maybe
+    - newtype
+    - prelude
+    - purelint
+    - strings

@@ -1,0 +1,12 @@
+package:
+  name: purelint-lsp
+  dependencies:
+    - arrays
+    - effect
+    - either
+    - foreign
+    - maybe
+    - newtype
+    - prelude
+    - purelint
+    - unsafe-coerce

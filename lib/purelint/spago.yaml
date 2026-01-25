@@ -1,0 +1,15 @@
+package:
+  name: purelint
+  dependencies:
+    - arrays
+    - effect
+    - either
+    - foldable-traversable
+    - language-cst-parser
+    - lists
+    - maybe
+    - newtype
+    - ordered-collections
+    - prelude
+    - strings
+    - tuples
