@@ -11,3 +11,6 @@ package:
     - prelude
     - purelint
     - strings
+    - node-buffer
+    - node-fs
+    - node-process

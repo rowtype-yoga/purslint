@@ -11,7 +11,7 @@ import Purelint.Rule (Rule, RuleContext, mkRule)
 import Purelint.Types (LintWarning(..), RuleId(..), Severity(..), Suggestion(..), SuggestionDescription(..), ReplacementText(..), WarningMessage(..))
 import PureScript.CST.Range (rangeOf)
 import PureScript.CST.Traversal (defaultMonoidalVisitor, foldMapModule)
-import PureScript.CST.Types (Expr(..), Ident(..), Module, Operator(..), QualifiedName(..))
+import PureScript.CST.Types (AppSpine(..), Expr(..), Ident(..), Module, Operator(..), QualifiedName(..))
 import Data.Void (Void)
 
 -- | Rule: x >>= pure -> x
@@ -53,24 +53,33 @@ redundantBindRule = mkRule (RuleId "RedundantBind") run
                 }
             }
         ]
-    else if isPureApp imports lhs then
-      -- pure x >>= f -> f x (don't auto-fix this one, too complex)
-      [ LintWarning
-          { ruleId: RuleId "RedundantBind"
-          , message: WarningMessage "pure x >>= f can be simplified"
-          , range: rangeOf fullExpr
-          , severity: Hint
-          , suggestion: Nothing -- No auto-fix for this pattern
-          }
-      ]
-    else
-      []
+    else case getPureArg imports lhs of
+      Just arg ->
+        -- pure x >>= f -> f x
+        let replacement = printExpr rhs <> " " <> printExpr arg
+        in
+          [ LintWarning
+              { ruleId: RuleId "RedundantBind"
+              , message: WarningMessage "pure x >>= f can be simplified to f x"
+              , range: rangeOf fullExpr
+              , severity: Warning
+              , suggestion: Just $ Suggestion
+                  { replacement: ReplacementText replacement
+                  , description: SuggestionDescription "Apply f directly to x"
+                  }
+              }
+          ]
+      Nothing -> []
 
   isPure :: ImportInfo -> Expr Void -> Boolean
   isPure imports (ExprIdent (QualifiedName { name: Ident name })) = 
     (name == "pure" && hasValue imports "pure") || (name == "return" && hasValue imports "pure")
   isPure _ _ = false
 
-  isPureApp :: ImportInfo -> Expr Void -> Boolean
-  isPureApp imports (ExprApp fn _) = isPure imports fn
-  isPureApp _ _ = false
+  getPureArg :: ImportInfo -> Expr Void -> Maybe (Expr Void)
+  getPureArg imports (ExprApp fn args) 
+    | isPure imports fn = 
+        case NEA.toArray args of
+          [AppTerm arg] -> Just arg
+          _ -> Nothing
+  getPureArg _ _ = Nothing

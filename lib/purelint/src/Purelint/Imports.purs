@@ -5,7 +5,6 @@ import Prelude
 import Data.Array as Array
 import Data.Foldable (foldr)
 import Data.Maybe (Maybe(..))
-import Data.Newtype (unwrap)
 import Data.Set (Set)
 import Data.Set as Set
 import Data.Tuple (Tuple(..), snd)
@@ -22,6 +21,10 @@ type ImportInfo =
   , hasPrelude :: Boolean
   }
 
+-- | Check if a module is prelude-like (for debugging)
+isPreludeModule :: String -> Boolean
+isPreludeModule name = Set.member name preludeModules
+
 -- | Modules considered "Prelude-like" for our purposes
 preludeModules :: Set String
 preludeModules = Set.fromFoldable
@@ -32,24 +35,53 @@ preludeModules = Set.fromFoldable
   , "Control.Applicative"
   , "Control.Monad"
   , "Control.Bind"
+  , "Control.Alternative"
   , "Data.Function"
   , "Data.Eq"
   , "Data.Boolean"
+  , "Data.Maybe"
+  , "Data.Tuple"
+  , "Data.Monoid"
+  , "Data.Semigroup"
+  , "Data.Ord"
+  , "Data.Array"
+  , "Data.Either"
+  , "Data.Bifunctor"
+  , "Data.List"
   ]
 
 -- | Standard Prelude values we care about
 standardValues :: Set String
 standardValues = Set.fromFoldable
   [ "map", "fmap", "identity", "id", "not"
-  , "traverse", "sequenceA", "sequence"
+  , "traverse", "traverse_", "sequenceA", "sequence", "for", "for_"
   , "concat", "concatMap", "bind", "pure", "join"
   , "when", "unless"
+  , "or", "and", "any", "all"
+  , "length", "null", "head", "last", "take", "reverse", "sort"
+  , "const", "void"
+  , "maybe", "fromMaybe", "isJust", "isNothing", "Nothing", "Just"
+  , "flip", "elem", "notElem", "elemIndex", "findIndex"
+  , "mempty", "fold", "foldMap"
+  , "fst", "snd", "uncurry"
+  , "max", "min", "minimum", "maximum"
+  , "compare", "comparing", "on"
+  , "guard"
+  , "catMaybes", "mapMaybe", "findMap"
+  , "either", "Left", "Right"
+  , "bimap", "first", "second"
+  , "span", "break"
+  , "negate"
+  , "zip", "zipWith"
+  , "repeat", "replicate"
   ]
 
 -- | Standard Prelude operators we care about
 standardOps :: Set String  
 standardOps = Set.fromFoldable
-  [ "<$>", "<#>", "<*>", ">>=", "=<<", ">>", "<<<", ">>>", "==", "/=" ]
+  [ "<$>", "<#>", "<*>", ">>=", "=<<", ">>", "*>", "<<<", ">>>", "==", "/="
+  , "<>", ">", ">=", "<", "<=", "$>", "!!"
+  ]
 
 -- | Extract import information from a module
 getImportInfo :: Module Void -> ImportInfo

@@ -15,40 +15,154 @@ import Node.Process as Process
 import Purelint.Config (defaultConfig, filterRules, parseConfig)
 import Purelint.Fix (applyAllFixes)
 import Purelint.Rule (Rule)
+import Purelint.Rules.BooleanSimplify (booleanSimplifyRule)
+import Purelint.Rules.CollapseLambdas (collapseLambdasRule)
 import Purelint.Rules.ConcatMap (concatMapRule)
 import Purelint.Rules.EtaReduce (etaReduceRule)
 import Purelint.Rules.EtaReduceDecl (etaReduceDeclRule)
+import Purelint.Rules.EvaluateConst (evaluateConstRule)
+import Purelint.Rules.EvaluateFst (evaluateFstRule)
 import Purelint.Rules.FmapId (fmapIdRule)
+import Purelint.Rules.FunctorLaw (functorLawRule)
 import Purelint.Rules.LetToWhere (letToWhereRule)
 import Purelint.Rules.MapFusion (mapFusionRule)
+import Purelint.Rules.MonoidIdentity (monoidIdentityRule)
 import Purelint.Rules.NotEqual (notEqualRule)
+import Purelint.Rules.NothingBind (nothingBindRule)
 import Purelint.Rules.RedundantBind (redundantBindRule)
+import Purelint.Rules.RedundantFlip (redundantFlipRule)
+import Purelint.Rules.RedundantGuard (redundantGuardRule)
+import Purelint.Rules.RedundantId (redundantIdRule)
+import Purelint.Rules.RedundantIf (redundantIfRule)
+import Purelint.Rules.RedundantNegate (redundantNegateRule)
+import Purelint.Rules.RedundantNot (redundantNotRule)
+import Purelint.Rules.RedundantReverse (redundantReverseRule)
+import Purelint.Rules.UnlessNot (unlessNotRule)
+import Purelint.Rules.UseAll (useAllRule)
+import Purelint.Rules.UseAnd (useAndRule)
+import Purelint.Rules.UseAny (useAnyRule)
+import Purelint.Rules.UseApplicative (useApplicativeRule)
+import Purelint.Rules.UseBimap (useBimapRule)
+import Purelint.Rules.UseBindFlip (useBindFlipRule)
+import Purelint.Rules.UseBreak (useBreakRule)
+import Purelint.Rules.UseComparing (useComparingRule)
+import Purelint.Rules.UseConst (useConstRule)
+import Purelint.Rules.UseEitherMap (useEitherMapRule)
+import Purelint.Rules.UseElemIndex (useElemIndexRule)
+import Purelint.Rules.UseFindMap (useFindMapRule)
+import Purelint.Rules.UseFold (useFoldRule)
+import Purelint.Rules.UseFoldMapId (useFoldMapIdRule)
+import Purelint.Rules.UseFor (useForRule)
+import Purelint.Rules.UseFromJust (useFromJustRule)
+import Purelint.Rules.UseFromMaybe (useFromMaybeRule)
+import Purelint.Rules.UseFstSnd (useFstSndRule)
 import Purelint.Rules.UseGuard (useGuardRule)
+import Purelint.Rules.UseGuardMaybe (useGuardMaybeRule)
+import Purelint.Rules.UseHead (useHeadRule)
+import Purelint.Rules.UseIsJust (useIsJustRule)
+import Purelint.Rules.UseIsNothing (useIsNothingRule)
+import Purelint.Rules.UseJoin (useJoinRule)
+import Purelint.Rules.UseLastReverse (useLastReverseRule)
+import Purelint.Rules.UseMapMaybe (useMapMaybeRule)
+import Purelint.Rules.UseMaybeMap (useMaybeMapRule)
+import Purelint.Rules.UseMinMax (useMinMaxRule)
+import Purelint.Rules.UseMinimumSort (useMinimumSortRule)
+import Purelint.Rules.UseNotElem (useNotElemRule)
+import Purelint.Rules.UseNull (useNullRule)
+import Purelint.Rules.UseOn (useOnRule)
+import Purelint.Rules.UseOr (useOrRule)
+import Purelint.Rules.UseReplicate (useReplicateRule)
+import Purelint.Rules.UseSequence (useSequenceRule)
+import Purelint.Rules.UseSpan (useSpanRule)
 import Purelint.Rules.UseTraverse (useTraverseRule)
+import Purelint.Rules.UseTraverseSequence (useTraverseSequenceRule)
+import Purelint.Rules.UseUncurry (useUncurryRule)
+import Purelint.Rules.UseUnless (useUnlessRule)
+import Purelint.Rules.UseVoid (useVoidRule)
+import Purelint.Rules.UseWhen (useWhenRule)
+import Purelint.Rules.UseZip (useZipRule)
+import Purelint.Rules.WhenNot (whenNotRule)
 import Purelint.Runner (runRules)
 import Purelint.Types (LintResult(..), LintWarning(..), Severity(..), SourceCode(..), Suggestion(..))
 
--- | All available rules
+-- | All available rules (70 total)
 allRules :: Array Rule
 allRules =
-  [ useTraverseRule
-  , mapFusionRule
-  , fmapIdRule
-  , notEqualRule
+  [ booleanSimplifyRule
+  , collapseLambdasRule
   , concatMapRule
-  , useGuardRule
   , etaReduceRule
   , etaReduceDeclRule
-  , redundantBindRule
+  , evaluateConstRule
+  , evaluateFstRule
+  , fmapIdRule
+  , functorLawRule
   , letToWhereRule
+  , mapFusionRule
+  , monoidIdentityRule
+  , notEqualRule
+  , nothingBindRule
+  , redundantBindRule
+  , redundantFlipRule
+  , redundantGuardRule
+  , redundantIdRule
+  , redundantIfRule
+  , redundantNegateRule
+  , redundantNotRule
+  , redundantReverseRule
+  , unlessNotRule
+  , useAllRule
+  , useAndRule
+  , useAnyRule
+  , useApplicativeRule
+  , useBimapRule
+  , useBindFlipRule
+  , useBreakRule
+  , useComparingRule
+  , useConstRule
+  , useEitherMapRule
+  , useElemIndexRule
+  , useFindMapRule
+  , useFoldRule
+  , useFoldMapIdRule
+  , useForRule
+  , useFromJustRule
+  , useFromMaybeRule
+  , useFstSndRule
+  , useGuardRule
+  , useGuardMaybeRule
+  , useHeadRule
+  , useIsJustRule
+  , useIsNothingRule
+  , useJoinRule
+  , useLastReverseRule
+  , useMapMaybeRule
+  , useMaybeMapRule
+  , useMinMaxRule
+  , useMinimumSortRule
+  , useNotElemRule
+  , useNullRule
+  , useOnRule
+  , useOrRule
+  , useReplicateRule
+  , useSequenceRule
+  , useSpanRule
+  , useTraverseRule
+  , useTraverseSequenceRule
+  , useUncurryRule
+  , useUnlessRule
+  , useVoidRule
+  , useWhenRule
+  , useZipRule
+  , whenNotRule
   ]
 
--- | Load config from .purelintignore file
+-- | Load config from .purelintrc file
 loadConfig :: Effect _ 
 loadConfig = do
-  hasConfig <- FS.exists ".purelintignore"
+  hasConfig <- FS.exists ".purelintrc"
   if hasConfig then do
-    content <- FS.readTextFile ".purelintignore"
+    content <- FS.readTextFile ".purelintrc"
     pure $ parseConfig content
   else
     pure defaultConfig
@@ -109,14 +223,18 @@ findPursFiles dir = do
   collectFiles :: String -> Array String -> String -> Effect (Array String)
   collectFiles parentDir acc entry = do
     let path = parentDir <> "/" <> entry
-    stats <- FS.stat path
-    if stats.isDirectory then do
-      subFiles <- findPursFiles path
-      pure (acc <> subFiles)
-    else if String.takeRight 5 entry == ".purs" then
-      pure (Array.snoc acc path)
-    else
+    -- Skip hidden directories and node_modules
+    if String.take 1 entry == "." || entry == "node_modules" || entry == ".spago" then
       pure acc
+    else do
+      stats <- FS.stat path
+      if stats.isDirectory then do
+        subFiles <- findPursFiles path
+        pure (acc <> subFiles)
+      else if String.takeRight 5 entry == ".purs" then
+        pure (Array.snoc acc path)
+      else
+        pure acc
 
 -- | Lint a file or directory with config
 lintPathWithConfig :: Array Rule -> String -> Effect Int
@@ -147,18 +265,18 @@ fixPath rules path = do
 -- | Show usage
 showUsage :: Effect Unit
 showUsage = do
-  log "purelint - a linter for PureScript"
+  log "purelint - a linter for PureScript (70 rules)"
   log ""
   log "Usage: purelint [OPTIONS] [FILES/DIRECTORIES...]"
   log ""
   log "Options:"
   log "  --help     Show this help"
   log "  --fix      Auto-fix issues (where possible)"
-  log "  --init     Create a sample .purelintignore"
+  log "  --init     Create a sample .purelintrc"
   log "  --list     List all available rules"
   log ""
   log "Configuration:"
-  log "  Create .purelintignore in your project root to disable rules."
+  log "  Create .purelintrc in your project root to disable rules."
   log "  Add one rule name per line (lines starting with # are comments)."
   log ""
   log "Examples:"
@@ -169,7 +287,7 @@ showUsage = do
 -- | List all available rules
 listRules :: Effect Unit
 listRules = do
-  log "Available rules:"
+  log $ "Available rules (" <> show (Array.length allRules) <> " total):"
   log ""
   for_ allRules \rule -> do
     log $ "  " <> unwrap rule.ruleId
@@ -177,23 +295,23 @@ listRules = do
 -- | Create sample config file
 initConfig :: Effect Unit
 initConfig = do
-  hasConfig <- FS.exists ".purelintignore"
+  hasConfig <- FS.exists ".purelintrc"
   if hasConfig then
-    log ".purelintignore already exists"
+    log ".purelintrc already exists"
   else do
-    let sampleConfig = """# purelint ignore file
+    let sampleConfig = """# purelint configuration
 # Add rule names (one per line) to disable them
 # Example:
 # EtaReduce
-# MapFusion
+# LetToWhere
 """
-    FS.writeTextFile ".purelintignore" sampleConfig
-    log "Created .purelintignore"
+    FS.writeTextFile ".purelintrc" sampleConfig
+    log "Created .purelintrc"
 
 main :: Effect Unit
 main = do
   args <- Process.argv
-  -- args[0] is the executable, args[1..] are the actual arguments
+  -- args[0] is node, args[1] is the script, args[2..] are the actual arguments
   let userArgs = Array.drop 1 args
   case userArgs of
     [] -> showUsage

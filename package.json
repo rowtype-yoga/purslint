@@ -1,0 +1,16 @@
+{
+  "name": "purelint",
+  "version": "0.1.0",
+  "description": "A linter for PureScript",
+  "type": "module",
+  "main": "output/Main/index.js",
+  "bin": {
+    "purelint": "./bin/purelint.js"
+  },
+  "scripts": {
+    "build": "purs compile 'lib/**/*.purs' 'bin/purelint-cli/**/*.purs' '.spago/**/*.purs'",
+    "test": "node --experimental-vm-modules test.js"
+  },
+  "keywords": ["purescript", "linter"],
+  "license": "MIT"
+}

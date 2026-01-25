@@ -2,8 +2,6 @@ workspace:
   packageSet:
     registry: 71.0.0
   extraPackages: {}
-  backend:
-    cmd: psgo
 
 package:
   name: purelint-tests
