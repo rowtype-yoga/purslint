@@ -1,4 +1,4 @@
-module Main where
+module Main.LSP where
 
 import Prelude
 import Effect (Effect)
