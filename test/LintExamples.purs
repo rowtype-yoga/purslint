@@ -106,7 +106,7 @@ etaReduceDecl1 x = show x
 
 -- | foo a b = bar a b -> foo a = bar a
 etaReduceDecl2 :: String -> String -> String
-etaReduceDecl2 a b = append a b
+etaReduceDecl2 a = append a
 
 -- ============================================================================
 -- RedundantBind: x >>= pure -> x
@@ -125,10 +125,8 @@ redundantBind2 x f = pure x >>= f
 -- ============================================================================
 
 -- | let x = y in z -> z where x = y
-letToWhere1 :: Int -> Int
-letToWhere1 x = y * 2
-  where
-  y = x + 1
+letToWhere1 :: Int -> Int -> Int
+letToWhere1 y z = let x = y in z
 
 -- | Multiple let bindings
 letToWhere2 :: Int -> Int

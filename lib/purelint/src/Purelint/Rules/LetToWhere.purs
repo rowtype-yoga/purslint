@@ -5,14 +5,16 @@ import Prelude
 import Data.Array.NonEmpty as NEA
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..))
+import Data.Monoid (power)
 import Data.String (joinWith) as String
+import Data.String as Str
 import Purelint.Rule (Rule, RuleContext, mkRule)
 import Purelint.Types (LintWarning(..), RuleId(..), Severity(..), Suggestion(..), SuggestionDescription(..), ReplacementText(..), WarningMessage(..))
 import PureScript.CST.Print (printToken)
 import PureScript.CST.Range (rangeOf, tokensOf)
 import PureScript.CST.Range.TokenList as TokenList
 import PureScript.CST.Traversal (defaultMonoidalVisitor, foldMapModule)
-import PureScript.CST.Types (Expr(..), LetBinding, Module)
+import PureScript.CST.Types (Comment(..), Expr(..), LetBinding, Module, SourceToken)
 
 -- | Rule: let x = y in z -> z where x = y
 -- | Suggests replacing let...in expressions with where clauses
@@ -28,8 +30,8 @@ letToWhereRule = mkRule (RuleId "LetToWhere") run
   checkExpr expr = case expr of
     ExprLet letIn ->
       let
-        bodyText = printExpr letIn.body
-        bindings = NEA.toArray letIn.bindings # map printBinding
+        bodyText = printTokens letIn.body
+        bindings = NEA.toArray letIn.bindings # map printBindingTokens
         bindingsText = String.joinWith "\n  " bindings
         replacement = bodyText <> "\n  where\n  " <> bindingsText
       in
@@ -46,8 +48,25 @@ letToWhereRule = mkRule (RuleId "LetToWhere") run
         ]
     _ -> []
 
-  printExpr :: Expr Void -> String
-  printExpr e = foldMap (\tok -> printToken tok.value) (TokenList.toArray (tokensOf e))
+  -- | Print tokens preserving spaces but collapsing newlines to single space
+  printTokens :: Expr Void -> String
+  printTokens e = 
+    Str.trim $ foldMap printSourceTokenWithSpaces (TokenList.toArray (tokensOf e))
 
-  printBinding :: LetBinding Void -> String
-  printBinding b = foldMap (\tok -> printToken tok.value) (TokenList.toArray (tokensOf b))
+  printBindingTokens :: LetBinding Void -> String
+  printBindingTokens b = 
+    Str.trim $ foldMap printSourceTokenWithSpaces (TokenList.toArray (tokensOf b))
+
+  -- | Print a source token, keeping spaces but converting newlines to spaces
+  printSourceTokenWithSpaces :: SourceToken -> String
+  printSourceTokenWithSpaces tok =
+    foldMap printCommentSpacesOnly tok.leadingComments
+      <> printToken tok.value
+      <> foldMap printCommentSpacesOnly tok.trailingComments
+
+  -- | Print comment, keeping spaces but skipping newlines
+  printCommentSpacesOnly :: forall l. Comment l -> String
+  printCommentSpacesOnly = case _ of
+    Comment str -> str
+    Space n -> power " " n
+    Line _ _ -> " "

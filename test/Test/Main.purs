@@ -340,4 +340,12 @@ letToWhereTests =
   -- Multiple bindings
   , assertWarningCount "LetToWhere: multiple bindings" [letToWhereRule]
       (withPrelude "x = let a = 1\n        b = 2 in a + b") 1
+  
+  -- Suggestion preserves spaces
+  , assertSuggestion "LetToWhere: preserves spaces in simple case" [letToWhereRule]
+      (withPrelude "x = let y = 1 in y + 1") "y + 1\n  where\n  y = 1"
+  , assertSuggestion "LetToWhere: preserves spaces in expressions" [letToWhereRule]
+      (withPrelude "f x = let a = x + 1 in a * 2") "a * 2\n  where\n  a = x + 1"
+  , assertSuggestion "LetToWhere: preserves spaces with multiple bindings" [letToWhereRule]
+      (withPrelude "f x = let a = x + 1\n          b = x * 2 in a + b") "a + b\n  where\n  a = x + 1\n  b = x * 2"
   ]
