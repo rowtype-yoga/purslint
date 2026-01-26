@@ -90,6 +90,7 @@ import Purelint.Rules.EvaluateEither (evaluateEitherRule)
 import Purelint.Rules.UseCaseOf (useCaseOfRule)
 import Purelint.Rules.FlattenCase (flattenCaseRule)
 import Purelint.Rules.UsePatternGuards (usePatternGuardsRule)
+import Purelint.Rules.RedundantParens (redundantParensRule)
 import Purelint.Rule (Rule)
 import Purelint.Runner (runRules, getImportsFromSource, getModuleNames)
 import Purelint.Imports (hasValue, isPreludeModule)
@@ -241,6 +242,7 @@ main = do
              <> useCaseOfTests
              <> flattenCaseTests
              <> usePatternGuardsTests
+             <> redundantParensTests
   
   -- Run effectful golden tests (with purs-tidy check)
   goldenResults <- goldenTests
@@ -1248,6 +1250,16 @@ useFoldMapTests =
       (withPrelude "x mx = case mx of\n  Nothing -> \"\"\n  Just s -> s <> \"!\"") "foldMap (\\s -> s <> \"!\") mx"
   , assertWarningCount "UseFoldMap: reversed order Just/Nothing" [useFoldMapRule]
       (withPrelude "x mx = case mx of\n  Just s -> f s\n  Nothing -> \"\"") 1
+  
+  -- Complex scrutinee should be wrapped in parens
+  , assertSuggestion "UseFoldMap: complex scrutinee gets parens" [useFoldMapRule]
+      (withPrelude "x f mx = case f mx of\n  Nothing -> \"\"\n  Just s -> g s") "foldMap g (f mx)"
+  
+  -- Negative cases: should NOT detect
+  , assertWarningCount "UseFoldMap: no fire on guarded Just branch" [useFoldMapRule]
+      (withPrelude "x mx = case mx of\n  Just s | s > \"\" -> f s\n  _ -> \"\"") 0
+  , assertWarningCount "UseFoldMap: no fire on where binding in Just branch" [useFoldMapRule]
+      (withPrelude "x mx = case mx of\n  Just s -> g s where g = f\n  Nothing -> \"\"") 0
   ]
 
 -- ============================================================================
@@ -1478,6 +1490,18 @@ useCaseOfTests =
   , assertSuggestion "UseCaseOf: two args suggestion" [useCaseOfRule]
       (withPrelude "add True True = 2\nadd True False = 1\nadd False True = 1\nadd False False = 0") "add = case _, _ of\n  True, True -> 2\n  True, False -> 1\n  False, True -> 1\n  False, False -> 0"
   
+  -- Clauses with where bindings
+  , assertWarningCount "UseCaseOf: clause with where binding" [useCaseOfRule]
+      (withPrelude "foo x = go x\n  where\n  isJoin True = x\n    where x = 1\n  isJoin False = 0") 1
+  , assertSuggestion "UseCaseOf: clause with where binding suggestion" [useCaseOfRule]
+      (withPrelude "foo x = go x\n  where\n  isJoin True = x\n    where x = 1\n  isJoin False = 0") "isJoin = case _ of\n    True ->\n        x\n        where\n        x = 1\n    False -> 0"
+
+  -- Regression test: nested case expression should preserve multiline formatting
+  , assertWarningCount "UseCaseOf: nested case expression" [useCaseOfRule]
+      (withPrelude "extractFn (Just x) =\n  case x of\n    1 -> \"one\"\n    _ -> \"other\"\nextractFn Nothing = \"nothing\"") 1
+  , assertSuggestion "UseCaseOf: nested case should preserve newlines" [useCaseOfRule]
+      (withPrelude "extractFn (Just x) =\n  case x of\n    1 -> \"one\"\n    _ -> \"other\"\nextractFn Nothing = \"nothing\"") "extractFn = case _ of\n  (Just x) ->\n    case x of\n      1 -> \"one\"\n      _ -> \"other\"\n  Nothing -> \"nothing\""
+
   -- Negative cases: should NOT detect
   , assertWarningCount "UseCaseOf: single clause" [useCaseOfRule]
       (withPrelude "foo x = x + 1") 0
@@ -1532,6 +1556,131 @@ usePatternGuardsTests =
   , assertFix "UsePatternGuards: fix with proper indentation" [usePatternGuardsRule]
       (withPrelude "foo x y = case x of\n  Just a -> case y of\n    Just b -> a + b\n    _ -> 0\n  _ -> 0")
       (withPrelude "foo x y = case x of\n  Just a\n    | Just b <- y -> a + b\n  _ -> 0")
+  ]
+
+-- ============================================================================
+-- RedundantParens Tests
+-- ============================================================================
+
+redundantParensTests :: Array TestResult
+redundantParensTests =
+  -- Positive cases: should detect redundant parens
+  [ assertWarningCount "RedundantParens: nested parens ((x))" [redundantParensRule]
+      (withPrelude "x = ((1))") 1
+  , assertRuleId "RedundantParens: correct rule id" [redundantParensRule]
+      (withPrelude "x = ((1))") "RedundantParens"
+  , assertSuggestion "RedundantParens: nested parens suggestion" [redundantParensRule]
+      (withPrelude "x = ((1))") "(1)"
+  
+  -- Function arguments with atomic expressions
+  , assertWarningCount "RedundantParens: literal in arg" [redundantParensRule]
+      (withPrelude "x = show (42)") 1
+  , assertSuggestion "RedundantParens: literal in arg suggestion" [redundantParensRule]
+      (withPrelude "x = show (42)") "42"
+  , assertWarningCount "RedundantParens: identifier in arg" [redundantParensRule]
+      (withPrelude "x y = show (y)") 1
+  , assertWarningCount "RedundantParens: string in arg" [redundantParensRule]
+      (withPrelude "x = show (\"hi\")") 1
+  , assertWarningCount "RedundantParens: array in arg" [redundantParensRule]
+      (withPrelude "x = length ([1, 2])") 1
+  , assertWarningCount "RedundantParens: record in arg" [redundantParensRule]
+      (withPrelude "x = show ({ a: 1 })") 1
+  
+  -- Multiple redundant args
+  , assertWarningCount "RedundantParens: two redundant args" [redundantParensRule]
+      (withPrelude "x = add (1) (2)") 2
+  
+  -- Array elements
+  , assertWarningCount "RedundantParens: array element literal" [redundantParensRule]
+      (withPrelude "x = [(1), (2)]") 2
+  , assertWarningCount "RedundantParens: array mixed" [redundantParensRule]
+      (withPrelude "x = [(1), 2, (3)]") 2
+  , assertWarningCount "RedundantParens: no fire on complex array element" [redundantParensRule]
+      (withPrelude "x = [(1 + 2)]") 0
+  
+  -- Negative cases: should NOT detect
+  , assertWarningCount "RedundantParens: no fire on precedence (1+2)*3" [redundantParensRule]
+      (withPrelude "x = (1 + 2) * 3") 0
+  , assertWarningCount "RedundantParens: no fire on complex arg" [redundantParensRule]
+      (withPrelude "x = show (1 + 2)") 0
+  , assertWarningCount "RedundantParens: no fire on lambda arg" [redundantParensRule]
+      (withPrelude "x = map (\\y -> y + 1) [1]") 0
+  , assertWarningCount "RedundantParens: no fire on negate arg" [redundantParensRule]
+      (withPrelude "x f = f (-1)") 0
+  , assertWarningCount "RedundantParens: no fire on section" [redundantParensRule]
+      (withPrelude "x = (_ + 1)") 0
+  , assertWarningCount "RedundantParens: no fire on if" [redundantParensRule]
+      (withPrelude "x = (if true then 1 else 2)") 0
+  , assertWarningCount "RedundantParens: no fire on let" [redundantParensRule]
+      (withPrelude "x = (let y = 1 in y)") 0
+  
+  -- Outer parens on RHS (simple cases)
+  , assertWarningCount "RedundantParens: outer parens on literal RHS" [redundantParensRule]
+      (withPrelude "x = (42)") 1
+  , assertWarningCount "RedundantParens: outer parens on app RHS" [redundantParensRule]
+      (withPrelude "x = (show 1)") 1
+  , assertWarningCount "RedundantParens: outer parens on op RHS" [redundantParensRule]
+      (withPrelude "x = (1 + 2)") 1
+  
+  -- If branches
+  , assertWarningCount "RedundantParens: if condition" [redundantParensRule]
+      (withPrelude "x = if (true) then 1 else 2") 1
+  , assertWarningCount "RedundantParens: if then branch" [redundantParensRule]
+      (withPrelude "x = if true then (1) else 2") 1
+  
+  -- Case branches
+  , assertWarningCount "RedundantParens: case scrutinee" [redundantParensRule]
+      (withPrelude "x = case (1) of y -> y") 1
+  , assertWarningCount "RedundantParens: case body" [redundantParensRule]
+      (withPrelude "x = case 1 of y -> (y)") 1
+  
+  -- Let expression
+  , assertWarningCount "RedundantParens: let binding" [redundantParensRule]
+      (withPrelude "x = let y = (1) in y") 1
+  , assertWarningCount "RedundantParens: let body" [redundantParensRule]
+      (withPrelude "x = let y = 1 in (y)") 1
+  
+  -- Record fields
+  , assertWarningCount "RedundantParens: record field" [redundantParensRule]
+      (withPrelude "x = { a: (1) }") 1
+  , assertWarningCount "RedundantParens: multiple record fields" [redundantParensRule]
+      (withPrelude "x = { a: (1), b: (2) }") 2
+  
+  -- Pattern (binder) cases
+  , assertWarningCount "RedundantParens: nested parens in pattern" [redundantParensRule]
+      (withPrelude "f ((x)) = x") 1
+  , assertSuggestion "RedundantParens: nested parens in pattern suggestion" [redundantParensRule]
+      (withPrelude "f ((x)) = x") "(x)"
+  , assertWarningCount "RedundantParens: atomic pattern in constructor arg" [redundantParensRule]
+      (withPrelude "f (Just (x)) = x\nf Nothing = 0") 1
+  , assertSuggestion "RedundantParens: constructor arg suggestion" [redundantParensRule]
+      (withPrelude "f (Just (x)) = x\nf Nothing = 0") "x"
+  , assertWarningCount "RedundantParens: wildcard in constructor" [redundantParensRule]
+      (withPrelude "f (Just (_)) = 1\nf Nothing = 0") 1
+  , assertWarningCount "RedundantParens: literal in constructor" [redundantParensRule]
+      (withPrelude "f (Just (1)) = true\nf _ = false") 1
+  , assertWarningCount "RedundantParens: array pattern element" [redundantParensRule]
+      (withPrelude "f [(x), (y)] = x + y\nf _ = 0") 2
+  
+  -- Negative pattern cases
+  , assertWarningCount "RedundantParens: no fire on constructor with args" [redundantParensRule]
+      (withPrelude "f (Just (Right x)) = x\nf _ = 0") 0
+  , assertWarningCount "RedundantParens: no fire on typed pattern" [redundantParensRule]
+      (withPrelude "f (x :: Int) = x") 0
+  , assertWarningCount "RedundantParens: no fire on negated number pattern" [redundantParensRule]
+      (withPrelude "f (Just (-1)) = true\nf _ = false") 0
+  
+  -- Top-level case pattern parens
+  , assertWarningCount "RedundantParens: top-level case pattern" [redundantParensRule]
+      (withPrelude "f = case _ of\n  (Just x) -> x\n  Nothing -> 0") 1
+  , assertSuggestion "RedundantParens: top-level case pattern suggestion" [redundantParensRule]
+      (withPrelude "f = case _ of\n  (Just x) -> x\n  Nothing -> 0") "Just x"
+  , assertWarningCount "RedundantParens: top-level constructor pattern" [redundantParensRule]
+      (withPrelude "f = case _ of\n  (Foo a b) -> a\n  _ -> 0") 1
+  , assertWarningCount "RedundantParens: no fire on cons pattern" [redundantParensRule]
+      (withPrelude "f = case _ of\n  (x : xs) -> x\n  _ -> 0") 0
+  , assertWarningCount "RedundantParens: no fire on typed case pattern" [redundantParensRule]
+      (withPrelude "f = case _ of\n  (x :: Int) -> x") 0
   ]
 
 -- | Helper for Alternative imports
@@ -1793,6 +1942,11 @@ goldenTests = traverse identity
   , pure $ assertFix "Golden: UsePatternGuards preserves do-let" [usePatternGuardsRule]
       (withPrelude "checkExpr expr =\n  case expr of\n    Just mapArgs ->\n      case toArray mapArgs of\n        [ x, y ] -> do\n          let\n            f = show x\n            g = show y\n          [ f, g ]\n        _ -> []\n    _ -> []")
       (withPrelude "checkExpr expr =\n  case expr of\n    Just mapArgs\n      | [ x, y ] <- toArray mapArgs -> do\n          let\n            f = show x\n            g = show y\n          [ f, g ]\n    _ -> [ ]")
+  
+  -- UseFoldMap: should preserve multiline formatting in complex body
+  , pure $ assertFix "Golden: UseFoldMap preserves multiline body" [useFoldMapRule]
+      (withPrelude "checkExpr mx =\n  case mx of\n    Just p ->\n      let\n        pText = show p\n      in\n        [ pText ]\n    Nothing -> []")
+      (withPrelude "checkExpr mx =\n  foldMap\n    ( \\p ->\n        let\n          pText = show p\n        in\n          [ pText ]\n    )\n    mx")
   ]
 
 -- ============================================================================

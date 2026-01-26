@@ -16,7 +16,7 @@ import PureScript.CST.Print (printToken)
 import PureScript.CST.Range (class RangeOf, rangeOf, tokensOf)
 import PureScript.CST.Range.TokenList as TokenList
 import PureScript.CST.Traversal (defaultMonoidalVisitor, foldMapModule)
-import PureScript.CST.Types (Comment(..), Declaration(..), Expr(..), Guarded(..), LetBinding, LineFeed, Module, SourceToken, Where(..))
+import PureScript.CST.Types (Comment(..), Declaration(..), Expr(..), Guarded(..), LetBinding, LineFeed(..), Module, SourceToken, Where(..))
 
 -- | Rule: let x = y in z -> z where x = y
 -- | Suggests replacing let...in expressions with where clauses
@@ -105,7 +105,12 @@ letToWhereRule = mkRule (RuleId "LetToWhere") run
   printLeadingComment shiftAmount = case _ of
     Comment str -> str
     Space n -> power " " (max 0 (n + shiftAmount))
-    Line _ n -> "\n" <> power " " (max 0 (n + shiftAmount))
+    Line lf n -> foldMap printLineFeed (Array.replicate n lf)
+
+  printLineFeed :: LineFeed -> String
+  printLineFeed = case _ of
+    LF -> "\n"
+    CRLF -> "\r\n"
 
   -- | Print trailing comment (has Void, so Line is impossible)
   printTrailingComment :: Comment Void -> String
