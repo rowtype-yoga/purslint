@@ -25,32 +25,25 @@ useAnyRule = mkRule (RuleId "UseAny") run
 
   checkExpr :: ImportInfo -> Expr Void -> Array LintWarning
   checkExpr imports expr = case expr of
-    -- Match: or (map f x)
-    ExprApp fnExpr args | isOr imports fnExpr ->
-      case NEA.toArray args of
-        [AppTerm innerExpr] ->
-          case unwrapParens innerExpr of
-            ExprApp mapFn mapArgs | isMapLike imports mapFn ->
-              case NEA.toArray mapArgs of
-                [AppTerm fExpr, AppTerm xExpr] ->
-                  let 
-                    fText = printExpr fExpr
-                    xText = printExpr xExpr
-                  in
-                    [ LintWarning
-                        { ruleId: RuleId "UseAny"
-                        , message: WarningMessage "Use any instead of or (map f x)"
-                        , range: rangeOf expr
-                        , severity: Warning
-                        , suggestion: Just $ Suggestion
-                            { replacement: ReplacementText ("any " <> fText <> " " <> xText)
-                            , description: SuggestionDescription "or (map f x) can be simplified to any f x"
-                            }
-                        }
-                    ]
-                _ -> []
-            _ -> []
-        _ -> []
+    ExprApp fnExpr args
+      | isOr imports fnExpr
+      , [ AppTerm innerExpr ] <- NEA.toArray args
+      , ExprApp mapFn mapArgs <- unwrapParens innerExpr
+      , isMapLike imports mapFn
+      , [ AppTerm fExpr, AppTerm xExpr ] <- NEA.toArray mapArgs -> do
+          let fText = printExpr fExpr
+          let xText = printExpr xExpr
+          [ LintWarning
+              { ruleId: RuleId "UseAny"
+              , message: WarningMessage "Use any instead of or (map f x)"
+              , range: rangeOf expr
+              , severity: Warning
+              , suggestion: Just $ Suggestion
+                  { replacement: ReplacementText ("any " <> fText <> " " <> xText)
+                  , description: SuggestionDescription "or (map f x) can be simplified to any f x"
+                  }
+              }
+          ]
     _ -> []
 
   unwrapParens :: Expr Void -> Expr Void
@@ -58,11 +51,11 @@ useAnyRule = mkRule (RuleId "UseAny") run
   unwrapParens e = e
 
   isOr :: ImportInfo -> Expr Void -> Boolean
-  isOr imports (ExprIdent (QualifiedName { name: Ident name })) = 
+  isOr imports (ExprIdent (QualifiedName { name: Ident name })) =
     name == "or" && hasValue imports "or"
   isOr _ _ = false
 
   isMapLike :: ImportInfo -> Expr Void -> Boolean
-  isMapLike imports (ExprIdent (QualifiedName { name: Ident name })) = 
-    (name == "map" && hasValue imports "map") || (name == "fmap" && hasValue imports "fmap")
+  isMapLike imports (ExprIdent (QualifiedName { name: Ident name })) =
+    name == "map" && hasValue imports "map"
   isMapLike _ _ = false

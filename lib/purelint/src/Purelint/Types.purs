@@ -15,8 +15,10 @@ derive newtype instance Ord RuleId
 derive newtype instance Show RuleId
 
 -- | Severity of a lint warning
+-- | Refactor is special: it doesn't show diagnostics, only code actions
 data Severity
-  = Hint
+  = Refactor
+  | Hint
   | Warning
   | Error
 
@@ -24,6 +26,7 @@ derive instance Eq Severity
 derive instance Ord Severity
 
 instance Show Severity where
+  show Refactor = "refactor"
   show Hint = "hint"
   show Warning = "warning"
   show Error = "error"

@@ -4,6 +4,8 @@ import Prelude
 
 import Data.Array as Array
 import Data.Either (Either(..))
+import Data.Map (Map)
+import Data.Map as Map
 import Data.Maybe (Maybe(..), fromMaybe)
 import Data.Newtype (unwrap)
 import Effect (Effect)
@@ -18,10 +20,12 @@ import Purelint.Rules.CollapseLambdas (collapseLambdasRule)
 import Purelint.Rules.ConcatMap (concatMapRule)
 import Purelint.Rules.EtaReduce (etaReduceRule)
 import Purelint.Rules.EtaReduceDecl (etaReduceDeclRule)
-import Purelint.Rules.FmapId (fmapIdRule)
+import Purelint.Rules.MapIdentity (mapIdentityRule)
 import Purelint.Rules.FunctorLaw (functorLawRule)
+import Purelint.Rules.LetToDo (letToDoRule)
 import Purelint.Rules.LetToWhere (letToWhereRule)
 import Purelint.Rules.MapFusion (mapFusionRule)
+import Purelint.Rules.MonadLaw (monadLawRule)
 import Purelint.Rules.MonoidIdentity (monoidIdentityRule)
 import Purelint.Rules.NotEqual (notEqualRule)
 import Purelint.Rules.RedundantBind (redundantBindRule)
@@ -45,12 +49,14 @@ import Purelint.Rules.UseSequence (useSequenceRule)
 import Purelint.Rules.UseTraverse (useTraverseRule)
 import Purelint.Rules.UseTraverseSequence (useTraverseSequenceRule)
 import Purelint.Rules.UseUnless (useUnlessRule)
+import Purelint.Rules.UseUnwrap (useUnwrapRule)
 import Purelint.Rules.UseVoid (useVoidRule)
 import Purelint.Rules.UseWhen (useWhenRule)
 import Purelint.Rules.UseMapMaybe (useMapMaybeRule)
 import Purelint.Rules.UseGuardMaybe (useGuardMaybeRule)
 import Purelint.Rules.UseMaybeMap (useMaybeMapRule)
 import Purelint.Rules.UseApplicative (useApplicativeRule)
+import Purelint.Rules.UseApplyFlipped (useApplyFlippedRule)
 import Purelint.Rules.UseBindFlip (useBindFlipRule)
 import Purelint.Rules.UseFor (useForRule)
 import Purelint.Rules.RedundantGuard (redundantGuardRule)
@@ -64,10 +70,14 @@ import Purelint.Rules.UseSpan (useSpanRule)
 import Purelint.Rules.UseMinimumSort (useMinimumSortRule)
 import Purelint.Rules.UseBimap (useBimapRule)
 import Purelint.Rules.UseEitherMap (useEitherMapRule)
-import Purelint.Rules.EvaluateFst (evaluateFstRule)
+import Purelint.Rules.AlternativeLaw (alternativeLawRule)
+import Purelint.Rules.EvaluateBool (evaluateBoolRule)
 import Purelint.Rules.EvaluateConst (evaluateConstRule)
+import Purelint.Rules.EvaluateEither (evaluateEitherRule)
+import Purelint.Rules.EvaluateFst (evaluateFstRule)
 import Purelint.Rules.UseOr (useOrRule)
 import Purelint.Rules.UseAnd (useAndRule)
+import Purelint.Rules.UseFoldMap (useFoldMapRule)
 import Purelint.Rules.UseFoldMapId (useFoldMapIdRule)
 import Purelint.Rules.WhenNot (whenNotRule)
 import Purelint.Rules.UnlessNot (unlessNotRule)
@@ -80,6 +90,8 @@ import Purelint.Rules.UseHead (useHeadRule)
 import Purelint.Rules.RedundantId (redundantIdRule)
 import Purelint.Rules.NothingBind (nothingBindRule)
 import Purelint.Rules.UseElemIndex (useElemIndexRule)
+import Purelint.Rules.UseFoldBool (useFoldBoolRule)
+import Purelint.Rules.UsePatternGuards (usePatternGuardsRule)
 import Purelint.Runner (runRules)
 import Purelint.Types (LintResult(..), LintWarning(..), RuleId(..), Severity(..), SourceCode(..), Suggestion(..))
 import Unsafe.Coerce (unsafeCoerce)
@@ -89,16 +101,18 @@ allRules :: Array Rule
 allRules =
   [ useTraverseRule
   , mapFusionRule
-  , fmapIdRule
+  , mapIdentityRule
   , notEqualRule
   , concatMapRule
   , useGuardRule
   , etaReduceRule
   , etaReduceDeclRule
   , redundantBindRule
+  , letToDoRule
   , letToWhereRule
   , redundantIfRule
   , functorLawRule
+  , useUnwrapRule
   , useVoidRule
   , useJoinRule
   , useAnyRule
@@ -125,6 +139,7 @@ allRules =
   , useGuardMaybeRule
   , useMaybeMapRule
   , useApplicativeRule
+  , useApplyFlippedRule
   , useBindFlipRule
   , useForRule
   , redundantGuardRule
@@ -140,10 +155,16 @@ allRules =
   , useBimapRule
   , useEitherMapRule
   , evaluateFstRule
+  , evaluateBoolRule
+  , evaluateEitherRule
   , evaluateConstRule
   , useOrRule
   , useAndRule
+  , useFoldMapRule
   , useFoldMapIdRule
+  , useFoldBoolRule
+  , monadLawRule
+  , alternativeLawRule
   , whenNotRule
   , unlessNotRule
   , useZipRule
@@ -155,11 +176,18 @@ allRules =
   , redundantIdRule
   , nothingBindRule
   , useElemIndexRule
+  , usePatternGuardsRule
   ]
 
 -- | Get enabled rules based on config
 getEnabledRules :: Config -> Array Rule
 getEnabledRules config = filterRules allRules config
+
+-- | LSP server state
+type LSPState =
+  { config :: Config
+  , documents :: Map String String  -- URI -> content
+  }
 
 -- | Convert lint warning to LSP diagnostic (with fix data embedded)
 warningToDiagnostic :: LintWarning -> Foreign
@@ -194,14 +222,18 @@ severityToLSP :: Severity -> Int
 severityToLSP Error = 1
 severityToLSP Warning = 2
 severityToLSP Hint = 4
+severityToLSP Refactor = 4  -- Same as Hint, but filtered out
 
--- | Lint a document and return diagnostics
+-- | Lint a document and return diagnostics (excludes Refactor severity)
 lintDocument :: Config -> String -> Array Foreign
 lintDocument config content =
   let rules = getEnabledRules config
   in case runRules rules (SourceCode content) of
     Left _ -> []
-    Right (LintResult result) -> map warningToDiagnostic result.warnings
+    Right (LintResult result) -> 
+      map warningToDiagnostic $ Array.filter (not <<< isRefactor) result.warnings
+  where
+  isRefactor (LintWarning w) = w.severity == Refactor
 
 -- | Create a publishDiagnostics notification
 mkPublishDiagnostics :: String -> Array Foreign -> String
@@ -332,8 +364,8 @@ parseSettings settings =
     in if s == "" then Nothing else Just (RuleId s)
 
 -- | Handle a single message
-handleMessage :: Ref Config -> Foreign -> Effect Unit
-handleMessage configRef msg = do
+handleMessage :: Ref LSPState -> Foreign -> Effect Unit
+handleMessage stateRef msg = do
   let method = fromMaybe "" (getField "method" msg)
   let reqId = fromMaybe 0 (getFieldInt "id" msg)
   
@@ -347,7 +379,7 @@ handleMessage configRef msg = do
         case getFieldObj "initializationOptions" params of
           Just options -> do
             let config = parseSettings options
-            Ref.write config configRef
+            Ref.modify_ (_ { config = config }) stateRef
             Stdio.logMessage $ "Initial config loaded, disabled: " <> show (Array.length config.disabledRules)
           Nothing -> pure unit
       Nothing -> pure unit
@@ -355,15 +387,15 @@ handleMessage configRef msg = do
   else if method == "initialized" then do
     Stdio.logMessage "Client initialized"
   else if method == "workspace/didChangeConfiguration" then do
-    handleDidChangeConfiguration configRef msg
+    handleDidChangeConfiguration stateRef msg
   else if method == "textDocument/didOpen" then do
-    handleDidOpen configRef msg
+    handleDidOpen stateRef msg
   else if method == "textDocument/didChange" then do
-    handleDidChange configRef msg
+    handleDidChange stateRef msg
   else if method == "textDocument/didClose" then do
-    handleDidClose msg
+    handleDidClose stateRef msg
   else if method == "textDocument/codeAction" then do
-    handleCodeAction msg reqId
+    handleCodeAction stateRef msg reqId
   else if method == "shutdown" then do
     Stdio.logMessage "Shutdown"
     Stdio.writeMessage $ mkResponse reqId
@@ -372,8 +404,8 @@ handleMessage configRef msg = do
   else do
     Stdio.logMessage $ "Unknown method: " <> method
 
-handleDidChangeConfiguration :: Ref Config -> Foreign -> Effect Unit
-handleDidChangeConfiguration configRef msg = do
+handleDidChangeConfiguration :: Ref LSPState -> Foreign -> Effect Unit
+handleDidChangeConfiguration stateRef msg = do
   Stdio.logMessage "Configuration changed"
   case getFieldObj "params" msg of
     Nothing -> pure unit
@@ -382,13 +414,12 @@ handleDidChangeConfiguration configRef msg = do
         Nothing -> pure unit
         Just settings -> do
           let config = parseSettings settings
-          Ref.write config configRef
+          Ref.modify_ (_ { config = config }) stateRef
           Stdio.logMessage $ "Config updated, disabled rules: " <> show (Array.length config.disabledRules)
 
-handleDidOpen :: Ref Config -> Foreign -> Effect Unit
-handleDidOpen configRef msg = do
+handleDidOpen :: Ref LSPState -> Foreign -> Effect Unit
+handleDidOpen stateRef msg = do
   Stdio.logMessage "Document opened"
-  config <- Ref.read configRef
   case getFieldObj "params" msg of
     Nothing -> pure unit
     Just params -> 
@@ -397,13 +428,15 @@ handleDidOpen configRef msg = do
         Just textDoc -> do
           let uri = fromMaybe "" (getField "uri" textDoc)
           let text = fromMaybe "" (getField "text" textDoc)
-          let diagnostics = lintDocument config text
+          -- Store document content
+          Ref.modify_ (\s -> s { documents = Map.insert uri text s.documents }) stateRef
+          state <- Ref.read stateRef
+          let diagnostics = lintDocument state.config text
           Stdio.writeMessage $ mkPublishDiagnostics uri diagnostics
 
-handleDidChange :: Ref Config -> Foreign -> Effect Unit
-handleDidChange configRef msg = do
+handleDidChange :: Ref LSPState -> Foreign -> Effect Unit
+handleDidChange stateRef msg = do
   Stdio.logMessage "Document changed"
-  config <- Ref.read configRef
   case getFieldObj "params" msg of
     Nothing -> pure unit
     Just params -> do
@@ -417,11 +450,14 @@ handleDidChange configRef msg = do
             Nothing -> pure unit
             Just change -> do
               let text = fromMaybe "" (getField "text" change)
-              let diagnostics = lintDocument config text
+              -- Update stored document content
+              Ref.modify_ (\s -> s { documents = Map.insert uri text s.documents }) stateRef
+              state <- Ref.read stateRef
+              let diagnostics = lintDocument state.config text
               Stdio.writeMessage $ mkPublishDiagnostics uri diagnostics
 
-handleDidClose :: Foreign -> Effect Unit
-handleDidClose msg = do
+handleDidClose :: Ref LSPState -> Foreign -> Effect Unit
+handleDidClose stateRef msg = do
   Stdio.logMessage "Document closed"
   case getFieldObj "params" msg of
     Nothing -> pure unit
@@ -430,11 +466,14 @@ handleDidClose msg = do
         Nothing -> pure unit
         Just textDoc -> do
           let uri = fromMaybe "" (getField "uri" textDoc)
+          -- Remove document from store
+          Ref.modify_ (\s -> s { documents = Map.delete uri s.documents }) stateRef
           Stdio.writeMessage $ mkPublishDiagnostics uri []
 
-handleCodeAction :: Foreign -> Int -> Effect Unit
-handleCodeAction msg reqId = do
+handleCodeAction :: Ref LSPState -> Foreign -> Int -> Effect Unit
+handleCodeAction stateRef msg reqId = do
   Stdio.logMessage "Code action requested"
+  state <- Ref.read stateRef
   case getFieldObj "params" msg of
     Nothing -> Stdio.writeMessage $ mkCodeActionResponse reqId []
     Just params -> do
@@ -443,16 +482,77 @@ handleCodeAction msg reqId = do
             textDoc <- getFieldObj "textDocument" params
             getField "uri" textDoc
       
-      -- Get diagnostics from the request context
+      -- Get the requested range
+      let requestedRange = getFieldObj "range" params
+      
+      -- Get diagnostics from the request context (for regular rules)
       let diagnostics = fromMaybe [] $ do
             context <- getFieldObj "context" params
             getFieldArr "diagnostics" context
       
-      -- Convert diagnostics to code actions (each diagnostic may produce multiple actions)
-      let actions = Array.concat $ map (diagnosticToCodeActions uri) diagnostics
+      -- Convert diagnostics to code actions (quickfix + disable rule)
+      let diagnosticActions = Array.concat $ map (diagnosticToCodeActions uri) diagnostics
+      
+      -- Get refactor actions from Refactor-severity rules
+      let refactorActions = case Map.lookup uri state.documents of
+            Nothing -> []
+            Just content -> getRefactorActions state.config uri requestedRange content
+      
+      let actions = diagnosticActions <> refactorActions
       
       Stdio.logMessage $ "Returning " <> show (Array.length actions) <> " code actions"
       Stdio.writeMessage $ mkCodeActionResponse reqId actions
+
+-- | Get code actions from Refactor-severity rules
+getRefactorActions :: Config -> String -> Maybe Foreign -> String -> Array Foreign
+getRefactorActions config uri maybeRange content =
+  let rules = getEnabledRules config
+  in case runRules rules (SourceCode content) of
+    Left _ -> []
+    Right (LintResult result) ->
+      let refactorWarnings = Array.filter isRefactor result.warnings
+          inRangeWarnings = case maybeRange of
+            Nothing -> refactorWarnings
+            Just range -> Array.filter (warningInRange range) refactorWarnings
+      in Array.mapMaybe (warningToRefactorAction uri) inRangeWarnings
+  where
+  isRefactor (LintWarning w) = w.severity == Refactor
+  
+  warningInRange :: Foreign -> LintWarning -> Boolean
+  warningInRange range (LintWarning w) =
+    let
+      startLine = fromMaybe 0 $ getFieldObj "start" range >>= getFieldInt "line"
+      endLine = fromMaybe 0 $ getFieldObj "end" range >>= getFieldInt "line"
+    in
+      w.range.start.line <= endLine && w.range.end.line >= startLine
+  
+  warningToRefactorAction :: String -> LintWarning -> Maybe Foreign
+  warningToRefactorAction docUri (LintWarning w) = do
+    Suggestion sug <- w.suggestion
+    let range =
+          { start: { line: w.range.start.line, character: w.range.start.column }
+          , end: { line: w.range.end.line, character: w.range.end.column }
+          }
+    pure $ mkRefactorAction (unwrap sug.description) docUri range (unwrap sug.replacement)
+
+-- | Create a refactor code action (no associated diagnostic)
+mkRefactorAction :: String -> String -> { start :: { line :: Int, character :: Int }, end :: { line :: Int, character :: Int } } -> String -> Foreign
+mkRefactorAction title uri range newText =
+  unsafeCoerce
+    { title: title
+    , kind: "refactor.rewrite"
+    , isPreferred: false
+    , edit:
+        { documentChanges:
+            [ { textDocument: 
+                  { uri: uri
+                  , version: mkNull unit
+                  }
+              , edits: [{ range: range, newText: newText }]
+              }
+            ]
+        }
+    }
 
 -- | Convert a diagnostic to code actions (quickfix + disable rule)
 diagnosticToCodeActions :: String -> Foreign -> Array Foreign
@@ -514,8 +614,8 @@ mkDisableRuleAction ruleId diagnostic =
     }
 
 -- | Main loop
-mainLoop :: Ref Config -> Effect Unit
-mainLoop configRef = do
+mainLoop :: Ref LSPState -> Effect Unit
+mainLoop stateRef = do
   msgStr <- Stdio.readMessage
   case msgStr of
     Nothing -> do
@@ -525,18 +625,18 @@ mainLoop configRef = do
       case Stdio.parseJSON str of
         Nothing -> do
           Stdio.logMessage "Failed to parse message"
-          mainLoop configRef
+          mainLoop stateRef
         Just msg -> do
-          handleMessage configRef msg
+          handleMessage stateRef msg
           -- Check if it was exit
           let method = fromMaybe "" (getField "method" msg)
           if method == "exit" 
             then pure unit
-            else mainLoop configRef
+            else mainLoop stateRef
 
 main :: Effect Unit
 main = do
   Stdio.logMessage "purelint-lsp starting..."
-  configRef <- Ref.new defaultConfig
-  mainLoop configRef
+  stateRef <- Ref.new { config: defaultConfig, documents: Map.empty }
+  mainLoop stateRef
   Stdio.logMessage "purelint-lsp exiting"

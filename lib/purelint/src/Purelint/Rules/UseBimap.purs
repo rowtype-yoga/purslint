@@ -30,154 +30,152 @@ useBimapRule = mkRule (RuleId "UseBimap") run
     -- Match: bimap id g or bimap f id
     ExprApp fn args
       | isBimap imports fn ->
-        case NEA.toArray args of
-          [AppTerm fArg, AppTerm gArg] ->
-            let fIsId = isIdentity imports fArg
+          case NEA.toArray args of
+            [ AppTerm fArg, AppTerm gArg ] ->
+              let
+                fIsId = isIdentity imports fArg
                 gIsId = isIdentity imports gArg
-            in
-              if fIsId && not gIsId then
-                let g = printExpr gArg
-                in
-                  [ LintWarning
-                      { ruleId: RuleId "UseBimap"
-                      , message: WarningMessage "bimap id g can be simplified to second g"
-                      , range: rangeOf expr
-                      , severity: Warning
-                      , suggestion: Just $ Suggestion
-                          { replacement: ReplacementText ("second " <> g)
-                          , description: SuggestionDescription "Use second instead of bimap id"
-                          }
-                      }
-                  ]
-              else if gIsId && not fIsId then
-                let f = printExpr fArg
-                in
-                  [ LintWarning
-                      { ruleId: RuleId "UseBimap"
-                      , message: WarningMessage "bimap f id can be simplified to first f"
-                      , range: rangeOf expr
-                      , severity: Warning
-                      , suggestion: Just $ Suggestion
-                          { replacement: ReplacementText ("first " <> f)
-                          , description: SuggestionDescription "Use first instead of bimap f id"
-                          }
-                      }
-                  ]
-              else if fIsId && gIsId then
-                [ LintWarning
-                    { ruleId: RuleId "UseBimap"
-                    , message: WarningMessage "bimap id id is redundant"
-                    , range: rangeOf expr
-                    , severity: Warning
-                    , suggestion: Just $ Suggestion
-                        { replacement: ReplacementText "identity"
-                        , description: SuggestionDescription "bimap id id is just identity"
+              in
+                if fIsId && not gIsId then
+                  let
+                    g = printExpr gArg
+                  in
+                    [ LintWarning
+                        { ruleId: RuleId "UseBimap"
+                        , message: WarningMessage "bimap id g can be simplified to second g"
+                        , range: rangeOf expr
+                        , severity: Warning
+                        , suggestion: Just $ Suggestion
+                            { replacement: ReplacementText ("second " <> g)
+                            , description: SuggestionDescription "Use second instead of bimap id"
+                            }
                         }
-                    }
-                ]
-              else []
-          [AppTerm fArg, AppTerm gArg, AppTerm xArg] ->
-            let fIsId = isIdentity imports fArg
+                    ]
+                else if gIsId && not fIsId then
+                  let
+                    f = printExpr fArg
+                  in
+                    [ LintWarning
+                        { ruleId: RuleId "UseBimap"
+                        , message: WarningMessage "bimap f id can be simplified to first f"
+                        , range: rangeOf expr
+                        , severity: Warning
+                        , suggestion: Just $ Suggestion
+                            { replacement: ReplacementText ("first " <> f)
+                            , description: SuggestionDescription "Use first instead of bimap f id"
+                            }
+                        }
+                    ]
+                else if fIsId && gIsId then
+                  [ LintWarning
+                      { ruleId: RuleId "UseBimap"
+                      , message: WarningMessage "bimap id id is redundant"
+                      , range: rangeOf expr
+                      , severity: Warning
+                      , suggestion: Just $ Suggestion
+                          { replacement: ReplacementText "identity"
+                          , description: SuggestionDescription "bimap id id is just identity"
+                          }
+                      }
+                  ]
+                else []
+            [ AppTerm fArg, AppTerm gArg, AppTerm xArg ] ->
+              let
+                fIsId = isIdentity imports fArg
                 gIsId = isIdentity imports gArg
                 x = printExpr xArg
-            in
-              if fIsId && not gIsId then
-                let g = printExpr gArg
-                in
-                  [ LintWarning
-                      { ruleId: RuleId "UseBimap"
-                      , message: WarningMessage "bimap id g x can be simplified to second g x"
-                      , range: rangeOf expr
-                      , severity: Warning
-                      , suggestion: Just $ Suggestion
-                          { replacement: ReplacementText ("second " <> g <> " " <> x)
-                          , description: SuggestionDescription "Use second instead of bimap id"
-                          }
-                      }
-                  ]
-              else if gIsId && not fIsId then
-                let f = printExpr fArg
-                in
-                  [ LintWarning
-                      { ruleId: RuleId "UseBimap"
-                      , message: WarningMessage "bimap f id x can be simplified to first f x"
-                      , range: rangeOf expr
-                      , severity: Warning
-                      , suggestion: Just $ Suggestion
-                          { replacement: ReplacementText ("first " <> f <> " " <> x)
-                          , description: SuggestionDescription "Use first instead of bimap f id"
-                          }
-                      }
-                  ]
-              else if fIsId && gIsId then
-                [ LintWarning
-                    { ruleId: RuleId "UseBimap"
-                    , message: WarningMessage "bimap id id x is redundant"
-                    , range: rangeOf expr
-                    , severity: Warning
-                    , suggestion: Just $ Suggestion
-                        { replacement: ReplacementText x
-                        , description: SuggestionDescription "bimap id id x is just x"
+              in
+                if fIsId && not gIsId then
+                  let
+                    g = printExpr gArg
+                  in
+                    [ LintWarning
+                        { ruleId: RuleId "UseBimap"
+                        , message: WarningMessage "bimap id g x can be simplified to second g x"
+                        , range: rangeOf expr
+                        , severity: Warning
+                        , suggestion: Just $ Suggestion
+                            { replacement: ReplacementText ("second " <> g <> " " <> x)
+                            , description: SuggestionDescription "Use second instead of bimap id"
+                            }
                         }
-                    }
-                ]
-              else []
-          _ -> []
+                    ]
+                else if gIsId && not fIsId then
+                  let
+                    f = printExpr fArg
+                  in
+                    [ LintWarning
+                        { ruleId: RuleId "UseBimap"
+                        , message: WarningMessage "bimap f id x can be simplified to first f x"
+                        , range: rangeOf expr
+                        , severity: Warning
+                        , suggestion: Just $ Suggestion
+                            { replacement: ReplacementText ("first " <> f <> " " <> x)
+                            , description: SuggestionDescription "Use first instead of bimap f id"
+                            }
+                        }
+                    ]
+                else if fIsId && gIsId then
+                  [ LintWarning
+                      { ruleId: RuleId "UseBimap"
+                      , message: WarningMessage "bimap id id x is redundant"
+                      , range: rangeOf expr
+                      , severity: Warning
+                      , suggestion: Just $ Suggestion
+                          { replacement: ReplacementText x
+                          , description: SuggestionDescription "bimap id id x is just x"
+                          }
+                      }
+                  ]
+                else []
+            _ -> []
       -- Match: first f (second g x) or second g (first f x)
       | isFirst imports fn ->
-        case NEA.toArray args of
-          [AppTerm fArg, AppTerm innerArg] ->
-            case unwrapParens innerArg of
-              ExprApp secondFn secondArgs
-                | isSecond imports secondFn ->
-                  case NEA.toArray secondArgs of
-                    [AppTerm gArg, AppTerm xArg] ->
-                      let
-                        f = printExpr fArg
-                        g = printExpr gArg
-                        x = printExpr xArg
-                      in
-                        [ LintWarning
-                            { ruleId: RuleId "UseBimap"
-                            , message: WarningMessage "first f (second g x) can be simplified to bimap f g x"
-                            , range: rangeOf expr
-                            , severity: Hint
-                            , suggestion: Just $ Suggestion
-                                { replacement: ReplacementText ("bimap " <> f <> " " <> g <> " " <> x)
-                                , description: SuggestionDescription "Use bimap instead of first and second"
-                                }
+          case NEA.toArray args of
+            [ AppTerm fArg, AppTerm innerArg ]
+              | ExprApp secondFn secondArgs <- unwrapParens innerArg
+              , isSecond imports secondFn
+              , [ AppTerm gArg, AppTerm xArg ] <- NEA.toArray secondArgs ->
+                  let
+                    f = printExpr fArg
+                    g = printExpr gArg
+                    x = printExpr xArg
+                  in
+                    [ LintWarning
+                        { ruleId: RuleId "UseBimap"
+                        , message: WarningMessage "first f (second g x) can be simplified to bimap f g x"
+                        , range: rangeOf expr
+                        , severity: Hint
+                        , suggestion: Just $ Suggestion
+                            { replacement: ReplacementText ("bimap " <> f <> " " <> g <> " " <> x)
+                            , description: SuggestionDescription "Use bimap instead of first and second"
                             }
-                        ]
-                    _ -> []
-              _ -> []
-          _ -> []
+                        }
+                    ]
+            _ -> []
       | isSecond imports fn ->
-        case NEA.toArray args of
-          [AppTerm gArg, AppTerm innerArg] ->
-            case unwrapParens innerArg of
-              ExprApp firstFn firstArgs
-                | isFirst imports firstFn ->
-                  case NEA.toArray firstArgs of
-                    [AppTerm fArg, AppTerm xArg] ->
-                      let
-                        f = printExpr fArg
-                        g = printExpr gArg
-                        x = printExpr xArg
-                      in
-                        [ LintWarning
-                            { ruleId: RuleId "UseBimap"
-                            , message: WarningMessage "second g (first f x) can be simplified to bimap f g x"
-                            , range: rangeOf expr
-                            , severity: Hint
-                            , suggestion: Just $ Suggestion
-                                { replacement: ReplacementText ("bimap " <> f <> " " <> g <> " " <> x)
-                                , description: SuggestionDescription "Use bimap instead of first and second"
-                                }
+          case NEA.toArray args of
+            [ AppTerm gArg, AppTerm innerArg ]
+              | ExprApp firstFn firstArgs <- unwrapParens innerArg
+              , isFirst imports firstFn
+              , [ AppTerm fArg, AppTerm xArg ] <- NEA.toArray firstArgs ->
+                  let
+                    f = printExpr fArg
+                    g = printExpr gArg
+                    x = printExpr xArg
+                  in
+                    [ LintWarning
+                        { ruleId: RuleId "UseBimap"
+                        , message: WarningMessage "second g (first f x) can be simplified to bimap f g x"
+                        , range: rangeOf expr
+                        , severity: Hint
+                        , suggestion: Just $ Suggestion
+                            { replacement: ReplacementText ("bimap " <> f <> " " <> g <> " " <> x)
+                            , description: SuggestionDescription "Use bimap instead of first and second"
                             }
-                        ]
-                    _ -> []
-              _ -> []
-          _ -> []
+                        }
+                    ]
+            _ -> []
     _ -> []
 
   unwrapParens :: Expr Void -> Expr Void

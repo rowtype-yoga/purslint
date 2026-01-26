@@ -6,7 +6,6 @@ import Data.Array as Array
 import Data.Array.NonEmpty as NEA
 import Data.Maybe (Maybe(..))
 import Data.String as String
-import Data.Void (Void)
 import Purelint.Print (printExpr)
 import Purelint.Rule (Rule, RuleContext, mkRule)
 import Purelint.Types (LintWarning(..), RuleId(..), Severity(..), Suggestion(..), SuggestionDescription(..), ReplacementText(..), WarningMessage(..))
@@ -16,7 +15,7 @@ import PureScript.CST.Types (Binder(..), Expr(..), Ident(..), Module, Name(..))
 
 -- | Rule: \x -> \y -> body -> \x y -> body
 collapseLambdasRule :: Rule
-collapseLambdasRule = mkRule (RuleId "CollapseLambdas") run
+collapseLambdasRule = run # mkRule (RuleId "CollapseLambdas")
   where
   run :: RuleContext -> Module Void -> Array LintWarning
   run _ctx = foldMapModule visitor
@@ -28,7 +27,7 @@ collapseLambdasRule = mkRule (RuleId "CollapseLambdas") run
     ExprLambda lambda ->
       -- Check if body is another lambda
       case lambda.body of
-        ExprLambda innerLambda ->
+        ExprLambda innerLambda -> do
           let
             outerBinders = NEA.toArray lambda.binders
             innerBinders = NEA.toArray innerLambda.binders
@@ -36,18 +35,17 @@ collapseLambdasRule = mkRule (RuleId "CollapseLambdas") run
             binderNames = Array.mapMaybe getBinderName allBinders
             bodyText = printExpr innerLambda.body
             replacement = "\\" <> String.joinWith " " binderNames <> " -> " <> bodyText
-          in
-            [ LintWarning
-                { ruleId: RuleId "CollapseLambdas"
-                , message: WarningMessage "Collapse nested lambdas"
-                , range: rangeOf expr
-                , severity: Hint
-                , suggestion: Just $ Suggestion
-                    { replacement: ReplacementText replacement
-                    , description: SuggestionDescription "\\x -> \\y -> body can be simplified to \\x y -> body"
-                    }
-                }
-            ]
+          [ LintWarning
+              { ruleId: RuleId "CollapseLambdas"
+              , message: WarningMessage "Collapse nested lambdas"
+              , range: rangeOf expr
+              , severity: Hint
+              , suggestion: Just $ Suggestion
+                  { replacement: ReplacementText replacement
+                  , description: SuggestionDescription "\\x -> \\y -> body can be simplified to \\x y -> body"
+                  }
+              }
+          ]
         _ -> []
     _ -> []
 

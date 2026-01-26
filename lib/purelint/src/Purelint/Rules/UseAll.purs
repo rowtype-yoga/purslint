@@ -64,5 +64,5 @@ useAllRule = mkRule (RuleId "UseAll") run
 
   isMapLike :: ImportInfo -> Expr Void -> Boolean
   isMapLike imports (ExprIdent (QualifiedName { name: Ident name })) = 
-    (name == "map" && hasValue imports "map") || (name == "fmap" && hasValue imports "fmap")
+    name == "map" && hasValue imports "map"
   isMapLike _ _ = false

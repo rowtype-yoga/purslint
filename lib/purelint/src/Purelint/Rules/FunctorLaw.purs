@@ -28,29 +28,32 @@ functorLawRule = mkRule (RuleId "FunctorLaw") run
   checkExpr :: ImportInfo -> Expr Void -> Array LintWarning
   checkExpr imports expr = case expr of
     -- Match: map f (map g x)
-    ExprApp fnExpr args | isMapLike imports fnExpr ->
-      case NEA.toArray args of
-        [AppTerm fExpr, AppTerm innerExpr] ->
-          case unwrapParens innerExpr of
-            ExprApp innerFn innerArgs | isMapLike imports innerFn ->
-              case NEA.toArray innerArgs of
-                [AppTerm gExpr, AppTerm xExpr] ->
-                  mkWarning expr fExpr gExpr xExpr "map"
-                _ -> []
-            _ -> []
-        _ -> []
+    ExprApp fnExpr args
+      | isMapLike imports fnExpr
+      , [AppTerm fExpr, AppTerm innerExpr] <- NEA.toArray args ->
+          checkInnerMap imports expr fExpr (unwrapParens innerExpr)
     -- Match: f <$> (g <$> x)
-    ExprOp fExpr ops | hasOp imports "<$>" ->
-      case NEA.toArray ops of
-        [Tuple qn innerExpr] | isMapOp imports qn ->
-          case unwrapParens innerExpr of
-            ExprOp gExpr innerOps ->
-              case NEA.toArray innerOps of
-                [Tuple innerQn xExpr] | isMapOp imports innerQn ->
-                  mkWarning expr fExpr gExpr xExpr "<$>"
-                _ -> []
-            _ -> []
-        _ -> []
+    ExprOp fExpr ops
+      | hasOp imports "<$>"
+      , [Tuple qn innerExpr] <- NEA.toArray ops
+      , isMapOp imports qn ->
+          checkInnerOp imports expr fExpr (unwrapParens innerExpr)
+    _ -> []
+
+  checkInnerMap :: ImportInfo -> Expr Void -> Expr Void -> Expr Void -> Array LintWarning
+  checkInnerMap imports fullExpr fExpr inner = case inner of
+    ExprApp innerFn innerArgs
+      | isMapLike imports innerFn
+      , [AppTerm gExpr, AppTerm xExpr] <- NEA.toArray innerArgs ->
+          mkWarning fullExpr fExpr gExpr xExpr "map"
+    _ -> []
+
+  checkInnerOp :: ImportInfo -> Expr Void -> Expr Void -> Expr Void -> Array LintWarning
+  checkInnerOp imports fullExpr fExpr inner = case inner of
+    ExprOp gExpr innerOps
+      | [Tuple innerQn xExpr] <- NEA.toArray innerOps
+      , isMapOp imports innerQn ->
+          mkWarning fullExpr fExpr gExpr xExpr "<$>"
     _ -> []
 
   mkWarning :: Expr Void -> Expr Void -> Expr Void -> Expr Void -> String -> Array LintWarning
@@ -81,7 +84,7 @@ functorLawRule = mkRule (RuleId "FunctorLaw") run
 
   isMapLike :: ImportInfo -> Expr Void -> Boolean
   isMapLike imports (ExprIdent (QualifiedName { name: Ident name })) = 
-    (name == "map" && hasValue imports "map") || (name == "fmap" && hasValue imports "fmap")
+    name == "map" && hasValue imports "map"
   isMapLike _ _ = false
 
   isMapOp :: ImportInfo -> QualifiedName Operator -> Boolean

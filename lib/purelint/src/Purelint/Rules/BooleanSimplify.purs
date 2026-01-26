@@ -19,7 +19,7 @@ import PureScript.CST.Types (Expr(..), Module, Operator(..), QualifiedName(..))
 -- | Also: true == x -> x
 -- | Also: false == x -> not x
 booleanSimplifyRule :: Rule
-booleanSimplifyRule = mkRule (RuleId "BooleanSimplify") run
+booleanSimplifyRule = run # mkRule (RuleId "BooleanSimplify")
   where
   run :: RuleContext -> Module Void -> Array LintWarning
   run ctx = foldMapModule visitor
@@ -29,24 +29,38 @@ booleanSimplifyRule = mkRule (RuleId "BooleanSimplify") run
 
   checkExpr :: ImportInfo -> Expr Void -> Array LintWarning
   checkExpr imports expr = case expr of
-    -- Match: x == true, x == false, true == x, false == x
-    ExprOp lhs ops | hasOp imports "==" ->
-      case NEA.toArray ops of
-        [Tuple qn rhs] | isEqOp qn ->
-          -- x == true -> x
-          if isBoolLit true rhs then
-            [ mkWarning expr (printExpr lhs) "x == true" "x" ]
-          -- x == false -> not x
-          else if isBoolLit false rhs then
-            [ mkWarning expr ("not " <> printExpr lhs) "x == false" "not x" ]
-          -- true == x -> x
-          else if isBoolLit true lhs then
-            [ mkWarning expr (printExpr rhs) "true == x" "x" ]
-          -- false == x -> not x
-          else if isBoolLit false lhs then
-            [ mkWarning expr ("not " <> printExpr rhs) "false == x" "not x" ]
-          else []
-        _ -> []
+
+    -- x == true -> x
+    ExprOp lhs ops
+      | "==" # hasOp imports
+      , [ Tuple qn rhs ] <- NEA.toArray ops
+      , isEqOp qn
+      , rhs # isBoolLit true ->
+          [ mkWarning expr (printExpr lhs) "x == true" "x" ]
+
+    -- x == false -> not x
+    ExprOp lhs ops
+      | "==" # hasOp imports
+      , [ Tuple qn rhs ] <- NEA.toArray ops
+      , isEqOp qn
+      , rhs # isBoolLit false ->
+          [ mkWarning expr ("not " <> printExpr lhs) "x == false" "not x" ]
+
+    -- true == x -> x
+    ExprOp lhs ops
+      | "==" # hasOp imports
+      , [ Tuple qn rhs ] <- NEA.toArray ops
+      , isEqOp qn
+      , lhs # isBoolLit true ->
+          [ mkWarning expr (printExpr rhs) "true == x" "x" ]
+
+    -- false == x -> not x
+    ExprOp lhs ops
+      | "==" # hasOp imports
+      , [ Tuple qn rhs ] <- NEA.toArray ops
+      , isEqOp qn
+      , lhs # isBoolLit false ->
+          [ mkWarning expr ("not " <> printExpr rhs) "false == x" "not x" ]
     _ -> []
 
   mkWarning :: Expr Void -> String -> String -> String -> LintWarning

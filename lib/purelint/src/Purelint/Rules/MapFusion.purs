@@ -29,18 +29,14 @@ mapFusionRule = mkRule (RuleId "MapFusion") run
   checkExpr :: ImportInfo -> Expr Void -> Array LintWarning
   checkExpr imports expr = case expr of
     -- Match: map f (map g x)
-    ExprApp fnExpr args ->
-      case fnExpr of
-        ExprIdent qn | isMap imports qn ->
-          -- Check if we have at least 2 args and the second is map g x
-          case NEA.toArray args of
-            [AppTerm fExpr, AppTerm innerExpr] -> 
-              checkInnerMap imports expr fExpr (unwrapParens innerExpr)
-            _ -> []
-        _ -> []
+    ExprApp (ExprIdent qn) args
+      | isMap imports qn
+      , [AppTerm fExpr, AppTerm innerExpr] <- NEA.toArray args ->
+          checkInnerMap imports expr fExpr (unwrapParens innerExpr)
     -- Match: f <$> (g <$> x) or f <$> g <$> x
-    ExprOp fExpr ops | NEA.length ops >= 1 ->
-      checkOpChain imports expr fExpr (NEA.toArray ops)
+    ExprOp fExpr ops
+      | NEA.length ops >= 1 ->
+          checkOpChain imports expr fExpr (NEA.toArray ops)
     _ -> []
 
   unwrapParens :: Expr Void -> Expr Void
@@ -51,17 +47,15 @@ mapFusionRule = mkRule (RuleId "MapFusion") run
   checkInnerMap :: ImportInfo -> Expr Void -> Expr Void -> Expr Void -> Array LintWarning
   checkInnerMap imports fullExpr fExpr innerExpr = 
     case innerExpr of
-      ExprApp mapFn innerArgs | isMapApp imports mapFn ->
-        case NEA.toArray innerArgs of
-          [AppTerm gExpr, AppTerm xExpr] ->
+      ExprApp mapFn innerArgs
+        | isMapApp imports mapFn
+        , [AppTerm gExpr, AppTerm xExpr] <- NEA.toArray innerArgs ->
             mkFusionWarning fullExpr fExpr gExpr xExpr "map"
-          _ -> []
       -- Also check: map f (g <$> x)
-      ExprOp gExpr innerOps ->
-        case NEA.toArray innerOps of
-          [Tuple qn xExpr] | isMapOp imports qn ->
+      ExprOp gExpr innerOps
+        | [Tuple qn xExpr] <- NEA.toArray innerOps
+        , isMapOp imports qn ->
             mkFusionWarning fullExpr fExpr gExpr xExpr "map"
-          _ -> []
       _ -> []
 
   -- Check operator form: f <$> (g <$> x) or f <$> g <$> x
@@ -69,39 +63,44 @@ mapFusionRule = mkRule (RuleId "MapFusion") run
   checkOpChain imports fullExpr fExpr ops = 
     case ops of
       -- f <$> (g <$> x) - inner is parenthesized
-      [Tuple op1 innerExpr] | isMapOp imports op1 ->
-        case unwrapParens innerExpr of
-          ExprOp gExpr innerOps ->
-            case NEA.toArray innerOps of
-              [Tuple op2 xExpr] | isMapOp imports op2 ->
-                mkFusionWarning fullExpr fExpr gExpr xExpr "<$>"
-              _ -> []
-          ExprApp mapFn innerArgs | isMapApp imports mapFn ->
-            case NEA.toArray innerArgs of
-              [AppTerm gExpr, AppTerm xExpr] ->
-                mkFusionWarning fullExpr fExpr gExpr xExpr "<$>"
-              _ -> []
-          _ -> []
+      [Tuple op1 innerExpr]
+        | isMapOp imports op1 ->
+            checkInnerOpExpr imports fullExpr fExpr (unwrapParens innerExpr)
       -- x <#> g <#> f - flipped map chain
-      [Tuple op1 gExpr, Tuple op2 fExpr'] | isFlippedMapOp imports op1 && isFlippedMapOp imports op2 ->
-        let
-          x = printExpr fExpr  -- fExpr is actually x in this case
-          g = printExpr gExpr
-          f = printExpr fExpr'
-          replacement = x <> " <#> (" <> g <> " >>> " <> f <> ")"
-        in
-          [ LintWarning
-              { ruleId: RuleId "MapFusion"
-              , message: WarningMessage "Fuse nested maps using composition"
-              , range: rangeOf fullExpr
-              , severity: Hint
-              , suggestion: Just $ Suggestion
-                  { replacement: ReplacementText replacement
-                  , description: SuggestionDescription "x <#> g <#> f can be replaced with x <#> (g >>> f)"
+      [Tuple op1 gExpr, Tuple op2 fExpr']
+        | isFlippedMapOp imports op1
+        , isFlippedMapOp imports op2 ->
+            let
+              x = printExpr fExpr  -- fExpr is actually x in this case
+              g = printExpr gExpr
+              f = printExpr fExpr'
+              replacement = x <> " <#> (" <> g <> " >>> " <> f <> ")"
+            in
+              [ LintWarning
+                  { ruleId: RuleId "MapFusion"
+                  , message: WarningMessage "Fuse nested maps using composition"
+                  , range: rangeOf fullExpr
+                  , severity: Hint
+                  , suggestion: Just $ Suggestion
+                      { replacement: ReplacementText replacement
+                      , description: SuggestionDescription "x <#> g <#> f can be replaced with x <#> (g >>> f)"
+                      }
                   }
-              }
-          ]
+              ]
       _ -> []
+
+  -- Helper: check the inner expression of f <$> (...)
+  checkInnerOpExpr :: ImportInfo -> Expr Void -> Expr Void -> Expr Void -> Array LintWarning
+  checkInnerOpExpr imports fullExpr fExpr inner = case inner of
+    ExprOp gExpr innerOps
+      | [Tuple op2 xExpr] <- NEA.toArray innerOps
+      , isMapOp imports op2 ->
+          mkFusionWarning fullExpr fExpr gExpr xExpr "<$>"
+    ExprApp mapFn innerArgs
+      | isMapApp imports mapFn
+      , [AppTerm gExpr, AppTerm xExpr] <- NEA.toArray innerArgs ->
+          mkFusionWarning fullExpr fExpr gExpr xExpr "<$>"
+    _ -> []
 
   mkFusionWarning :: Expr Void -> Expr Void -> Expr Void -> Expr Void -> String -> Array LintWarning
   mkFusionWarning fullExpr fExpr gExpr xExpr style =
@@ -131,7 +130,7 @@ mapFusionRule = mkRule (RuleId "MapFusion") run
 
   isMap :: ImportInfo -> QualifiedName Ident -> Boolean
   isMap imports (QualifiedName { name: Ident name }) = 
-    (name == "map" && hasValue imports "map") || (name == "fmap" && hasValue imports "fmap")
+    name == "map" && hasValue imports "map"
 
   isMapOp :: ImportInfo -> QualifiedName Operator -> Boolean
   isMapOp imports (QualifiedName { name: Operator op }) = 

@@ -11,8 +11,8 @@ import Data.Traversable (traverse)
 import Effect (Effect)
 import Effect.Class.Console (log)
 import Purelint.Fix (applyAllFixes)
-import Purelint.Tidy (formatExpr)
-import Purelint.Rules.FmapId (fmapIdRule)
+import Purelint.Tidy (formatExpr, formatModule)
+import Purelint.Rules.MapIdentity (mapIdentityRule)
 import Purelint.Rules.MapFusion (mapFusionRule)
 import Purelint.Rules.UseTraverse (useTraverseRule)
 import Purelint.Rules.ConcatMap (concatMapRule)
@@ -22,6 +22,7 @@ import Purelint.Rules.EtaReduce (etaReduceRule)
 import Purelint.Rules.EtaReduceDecl (etaReduceDeclRule)
 import Purelint.Rules.RedundantBind (redundantBindRule)
 import Purelint.Rules.LetToWhere (letToWhereRule)
+import Purelint.Rules.LetToDo (letToDoRule)
 import Purelint.Rules.RedundantIf (redundantIfRule)
 import Purelint.Rules.FunctorLaw (functorLawRule)
 import Purelint.Rules.UseVoid (useVoidRule)
@@ -67,7 +68,9 @@ import Purelint.Rules.EvaluateFst (evaluateFstRule)
 import Purelint.Rules.EvaluateConst (evaluateConstRule)
 import Purelint.Rules.UseOr (useOrRule)
 import Purelint.Rules.UseAnd (useAndRule)
+import Purelint.Rules.UseFoldMap (useFoldMapRule)
 import Purelint.Rules.UseFoldMapId (useFoldMapIdRule)
+import Purelint.Rules.UseApplyFlipped (useApplyFlippedRule)
 import Purelint.Rules.WhenNot (whenNotRule)
 import Purelint.Rules.UnlessNot (unlessNotRule)
 import Purelint.Rules.UseZip (useZipRule)
@@ -79,6 +82,14 @@ import Purelint.Rules.UseHead (useHeadRule)
 import Purelint.Rules.RedundantId (redundantIdRule)
 import Purelint.Rules.NothingBind (nothingBindRule)
 import Purelint.Rules.UseElemIndex (useElemIndexRule)
+import Purelint.Rules.MonadLaw (monadLawRule)
+import Purelint.Rules.EvaluateBool (evaluateBoolRule)
+import Purelint.Rules.UseFoldBool (useFoldBoolRule)
+import Purelint.Rules.AlternativeLaw (alternativeLawRule)
+import Purelint.Rules.EvaluateEither (evaluateEitherRule)
+import Purelint.Rules.UseCaseOf (useCaseOfRule)
+import Purelint.Rules.FlattenCase (flattenCaseRule)
+import Purelint.Rules.UsePatternGuards (usePatternGuardsRule)
 import Purelint.Rule (Rule)
 import Purelint.Runner (runRules, getImportsFromSource, getModuleNames)
 import Purelint.Imports (hasValue, isPreludeModule)
@@ -143,12 +154,27 @@ assertFix name rules source expectedFixed =
          then runTest name true "OK"
          else runTest name false ("Expected:\n" <> expectedFixed <> "\nGot:\n" <> fixed)
 
+-- | Assert that applying fixes produces expected output AND result is tidy-formatted
+assertFixFormatted :: String -> Array Rule -> String -> String -> Effect TestResult
+assertFixFormatted name rules source expectedFixed =
+  case runRules rules (SourceCode source) of
+    Left err -> pure $ runTest name false ("Parse error: " <> err)
+    Right result -> do
+      let fixed = applyAllFixes source result
+      -- Check that the fix output is already tidy-formatted
+      tidied <- formatModule fixed
+      if tidied /= fixed
+        then pure $ runTest name false ("Fix output not tidy-formatted.\nGot:\n" <> fixed <> "\nTidy expects:\n" <> tidied)
+        else if fixed /= expectedFixed
+          then pure $ runTest name false ("Expected:\n" <> expectedFixed <> "\nGot:\n" <> fixed)
+          else pure $ runTest name true "OK"
+
 -- | Run all tests and report results
 main :: Effect Unit
 main = do
   log "Running purelint tests...\n"
   
-  let results = fmapIdTests 
+  let results = mapIdentityTests 
              <> mapFusionTests
              <> useTraverseTests
              <> concatMapTests
@@ -198,6 +224,8 @@ main = do
              <> evaluateConstTests
              <> useOrTests
              <> useAndTests
+             <> useFoldMapTests
+             <> useApplyFlippedTests
              <> useFoldMapIdTests
              <> whenNotTests
              <> unlessNotTests
@@ -205,13 +233,24 @@ main = do
              <> redundantNegateTests
              <> redundantIdTests
              <> nothingBindTests
-             <> goldenTests
+             <> monadLawTests
+             <> evaluateBoolTests
+             <> useFoldBoolTests
+             <> alternativeLawTests
+             <> evaluateEitherTests
+             <> useCaseOfTests
+             <> flattenCaseTests
+             <> usePatternGuardsTests
   
-  let passed = Array.length $ Array.filter _.passed results
-  let total = Array.length results
+  -- Run effectful golden tests (with purs-tidy check)
+  goldenResults <- goldenTests
+  let allResults = results <> goldenResults
+  
+  let passed = Array.length $ Array.filter _.passed allResults
+  let total = Array.length allResults
   
   -- Report failures
-  let failures = Array.filter (not <<< _.passed) results
+  let failures = Array.filter (not <<< _.passed) allResults
   when (Array.length failures > 0) do
     log "FAILURES:"
     for_ failures (\r -> log ("  ✗ " <> r.name <> ": " <> r.message))
@@ -239,42 +278,40 @@ main = do
 
 -- | Helper: wrap code in a module with Prelude import
 withPrelude :: String -> String
-withPrelude code = "module Test where\nimport Prelude\nimport Data.Maybe\nimport Data.Foldable\nimport Data.Tuple\nimport Data.Monoid\nimport Data.Traversable\nimport Data.Array\nimport Control.Alternative\nimport Data.Ord\nimport Data.Either\nimport Data.Bifunctor\nimport Data.List\n" <> code
+withPrelude code = "module Test where\n\nimport Prelude\nimport Data.Maybe\nimport Data.Foldable\nimport Data.Tuple\nimport Data.Monoid\nimport Data.Traversable\nimport Data.Array\nimport Control.Alternative\nimport Data.Ord\nimport Data.Either\nimport Data.Bifunctor\nimport Data.List\n\n" <> code
 
 -- | Helper: wrap code in module without imports
 withoutImports :: String -> String
 withoutImports code = "module Test where\n" <> code
 
 -- ============================================================================
--- FmapId Tests
+-- MapIdentity Tests
 -- ============================================================================
 
-fmapIdTests :: Array TestResult
-fmapIdTests =
+mapIdentityTests :: Array TestResult
+mapIdentityTests =
   -- Positive cases: should detect
-  [ assertWarningCount "FmapId: map identity x" [fmapIdRule] 
+  [ assertWarningCount "MapIdentity: map identity x" [mapIdentityRule] 
       (withPrelude "x = map identity [1]") 1
-  , assertRuleId "FmapId: correct rule id" [fmapIdRule]
-      (withPrelude "x = map identity [1]") "FmapId"
-  , assertSuggestion "FmapId: map identity suggestion" [fmapIdRule]
-      (withPrelude "x = map identity [1]") "[1]"
-  , assertWarningCount "FmapId: fmap identity x" [fmapIdRule]
-      (withPrelude "x = fmap identity [1]") 1
-  , assertWarningCount "FmapId: identity <$> x" [fmapIdRule]
+  , assertRuleId "MapIdentity: correct rule id" [mapIdentityRule]
+      (withPrelude "x = map identity [1]") "MapIdentity"
+  , assertSuggestion "MapIdentity: map identity suggestion" [mapIdentityRule]
+      (withPrelude "x = map identity [1]") "[ 1 ]"
+  , assertWarningCount "MapIdentity: identity <$> x" [mapIdentityRule]
       (withPrelude "x = identity <$> [1]") 1
-  , assertWarningCount "FmapId: x <#> identity" [fmapIdRule]
+  , assertWarningCount "MapIdentity: x <#> identity" [mapIdentityRule]
       (withPrelude "x = [1] <#> identity") 1
   
   -- Negative cases: should NOT detect
-  , assertWarningCount "FmapId: no fire on map show" [fmapIdRule]
+  , assertWarningCount "MapIdentity: no fire on map show" [mapIdentityRule]
       (withPrelude "x = map show [1]") 0
-  , assertWarningCount "FmapId: no fire without import" [fmapIdRule]
+  , assertWarningCount "MapIdentity: no fire without import" [mapIdentityRule]
       (withoutImports "x = map identity [1]") 0
   
   -- Auto-fix test
-  , assertFix "FmapId: fix map identity" [fmapIdRule]
+  , assertFix "MapIdentity: fix map identity" [mapIdentityRule]
       (withPrelude "x = map identity [1]")
-      (withPrelude "x = [1]")
+      (withPrelude "x = [ 1 ]")
   ]
 
 -- ============================================================================
@@ -440,7 +477,7 @@ redundantBindTests =
   , assertRuleId "RedundantBind: correct rule id" [redundantBindRule]
       (withPrelude "x = [1] >>= pure") "RedundantBind"
   , assertSuggestion "RedundantBind: x >>= pure suggestion" [redundantBindRule]
-      (withPrelude "x = [1] >>= pure") "[1]"
+      (withPrelude "x = [1] >>= pure") "[ 1 ]"
   , assertWarningCount "RedundantBind: pure x >>= f" [redundantBindRule]
       (withPrelude "x = pure 1 >>= show") 1
   , assertSuggestion "RedundantBind: pure x >>= f suggestion" [redundantBindRule]
@@ -469,13 +506,16 @@ letToWhereTests =
   , assertWarningCount "LetToWhere: multiple bindings" [letToWhereRule]
       (withPrelude "x = let a = 1\n        b = 2 in a + b") 1
   
-  -- Suggestion preserves spaces
+  -- Suggestion preserves spaces based on let column position
   , assertSuggestion "LetToWhere: preserves spaces in simple case" [letToWhereRule]
-      (withPrelude "x = let y = 1 in y + 1") "y + 1\n  where\n  y = 1"
+      (withPrelude "x = let y = 1 in y + 1") "y + 1\n    where\n    y = 1"
   , assertSuggestion "LetToWhere: preserves spaces in expressions" [letToWhereRule]
-      (withPrelude "f x = let a = x + 1 in a * 2") "a * 2\n  where\n  a = x + 1"
+      (withPrelude "f x = let a = x + 1 in a * 2") "a * 2\n      where\n      a = x + 1"
   , assertSuggestion "LetToWhere: preserves spaces with multiple bindings" [letToWhereRule]
-      (withPrelude "f x = let a = x + 1\n          b = x * 2 in a + b") "a + b\n  where\n  a = x + 1\n  b = x * 2"
+      (withPrelude "f x = let a = x + 1\n          b = x * 2 in a + b") "a + b\n      where\n      a = x + 1\n      b = x * 2"
+  -- Nested let should preserve indentation context
+  , assertSuggestion "LetToWhere: nested let preserves indentation" [letToWhereRule]
+      (withPrelude "f x =\n    let y = 1 in y + 1") "y + 1\n    where\n    y = 1"
   ]
 
 -- ============================================================================
@@ -578,7 +618,7 @@ useAnyTests =
   , assertRuleId "UseAny: correct rule id" [useAnyRule]
       (withPrelude "x = or (map f [1])") "UseAny"
   , assertSuggestion "UseAny: suggests any" [useAnyRule]
-      (withPrelude "x = or (map f [1])") "any f [1]"
+      (withPrelude "x = or (map f [1])") "any f [ 1 ]"
   
   -- Negative cases
   , assertWarningCount "UseAny: no fire on or alone" [useAnyRule]
@@ -599,7 +639,7 @@ useAllTests =
   , assertRuleId "UseAll: correct rule id" [useAllRule]
       (withPrelude "x = and (map f [1])") "UseAll"
   , assertSuggestion "UseAll: suggests all" [useAllRule]
-      (withPrelude "x = and (map f [1])") "all f [1]"
+      (withPrelude "x = and (map f [1])") "all f [ 1 ]"
   
   -- Negative cases
   , assertWarningCount "UseAll: no fire on and alone" [useAllRule]
@@ -689,7 +729,7 @@ useNullTests =
   , assertRuleId "UseNull: correct rule id" [useNullRule]
       (withPrelude "x = length [1] == 0") "UseNull"
   , assertSuggestion "UseNull: suggests null" [useNullRule]
-      (withPrelude "x = length [1] == 0") "null [1]"
+      (withPrelude "x = length [1] == 0") "null [ 1 ]"
   , assertWarningCount "UseNull: 0 == length x" [useNullRule]
       (withPrelude "x = 0 == length [1]") 1
   
@@ -815,7 +855,7 @@ useNotElemTests =
   , assertRuleId "UseNotElem: correct rule id" [useNotElemRule]
       (withPrelude "x = not (elem 1 [1,2,3])") "UseNotElem"
   , assertSuggestion "UseNotElem: suggests notElem" [useNotElemRule]
-      (withPrelude "x = not (elem 1 [1,2,3])") "notElem 1 [1,2,3]"
+      (withPrelude "x = not (elem 1 [1,2,3])") "notElem 1 [ 1, 2, 3 ]"
   
   -- Negative cases
   , assertWarningCount "UseNotElem: no fire on not (foo x)" [useNotElemRule]
@@ -855,7 +895,7 @@ monoidIdentityTests =
   , assertRuleId "MonoidIdentity: correct rule id" [monoidIdentityRule]
       (withPrelude "x = mempty <> [1,2,3]") "MonoidIdentity"
   , assertSuggestion "MonoidIdentity: suggests x" [monoidIdentityRule]
-      (withPrelude "x = mempty <> [1,2,3]") "[1,2,3]"
+      (withPrelude "x = mempty <> [1,2,3]") "[ 1, 2, 3 ]"
   , assertWarningCount "MonoidIdentity: x <> mempty" [monoidIdentityRule]
       (withPrelude "x = [1,2,3] <> mempty") 1
   
@@ -911,7 +951,7 @@ useTraverseSequenceTests =
   , assertRuleId "UseTraverseSequence: correct rule id" [useTraverseSequenceRule]
       (withPrelude "x = sequence (map show [1,2,3])") "UseTraverseSequence"
   , assertSuggestion "UseTraverseSequence: suggests traverse" [useTraverseSequenceRule]
-      (withPrelude "x = sequence (map show [1,2,3])") "traverse show [1,2,3]"
+      (withPrelude "x = sequence (map show [1,2,3])") "traverse show [ 1, 2, 3 ]"
   
   -- Negative cases
   , assertWarningCount "UseTraverseSequence: no fire on sequence xs" [useTraverseSequenceRule]
@@ -969,7 +1009,7 @@ useMapMaybeTests =
   , assertRuleId "UseMapMaybe: correct rule id" [useMapMaybeRule]
       (withPrelude "x = catMaybes (map f [1,2,3])") "UseMapMaybe"
   , assertSuggestion "UseMapMaybe: suggests mapMaybe" [useMapMaybeRule]
-      (withPrelude "x = catMaybes (map f [1,2,3])") "mapMaybe f [1,2,3]"
+      (withPrelude "x = catMaybes (map f [1,2,3])") "mapMaybe f [ 1, 2, 3 ]"
   ]
 
 -- ============================================================================
@@ -1073,7 +1113,7 @@ useFindMapTests =
   , assertRuleId "UseFindMap: correct rule id" [useFindMapRule]
       (withPrelude "x = head (mapMaybe f [1,2,3])") "UseFindMap"
   , assertSuggestion "UseFindMap: suggests findMap" [useFindMapRule]
-      (withPrelude "x = head (mapMaybe f [1,2,3])") "findMap f [1,2,3]"
+      (withPrelude "x = head (mapMaybe f [1,2,3])") "findMap f [ 1, 2, 3 ]"
   ]
 
 -- ============================================================================
@@ -1087,7 +1127,7 @@ useLastReverseTests =
   , assertRuleId "UseLastReverse: correct rule id" [useLastReverseRule]
       (withPrelude "x = head (reverse [1,2,3])") "UseLastReverse"
   , assertSuggestion "UseLastReverse: suggests last" [useLastReverseRule]
-      (withPrelude "x = head (reverse [1,2,3])") "last [1,2,3]"
+      (withPrelude "x = head (reverse [1,2,3])") "last [ 1, 2, 3 ]"
   ]
 
 -- ============================================================================
@@ -1115,7 +1155,7 @@ useMinimumSortTests =
   , assertRuleId "UseMinimumSort: correct rule id" [useMinimumSortRule]
       (withPrelude "x = head (sort [1,2,3])") "UseMinimumSort"
   , assertSuggestion "UseMinimumSort: suggests minimum" [useMinimumSortRule]
-      (withPrelude "x = head (sort [1,2,3])") "minimum [1,2,3]"
+      (withPrelude "x = head (sort [1,2,3])") "minimum [ 1, 2, 3 ]"
   ]
 
 -- ============================================================================
@@ -1175,7 +1215,7 @@ useOrTests =
   , assertRuleId "UseOr: correct rule id" [useOrRule]
       (withPrelude "x = any identity [true, false]") "UseOr"
   , assertSuggestion "UseOr: suggests or" [useOrRule]
-      (withPrelude "x = any identity [true, false]") "or [true, false]"
+      (withPrelude "x = any identity [true, false]") "or [ true, false ]"
   ]
 
 -- ============================================================================
@@ -1189,7 +1229,39 @@ useAndTests =
   , assertRuleId "UseAnd: correct rule id" [useAndRule]
       (withPrelude "x = all identity [true, false]") "UseAnd"
   , assertSuggestion "UseAnd: suggests and" [useAndRule]
-      (withPrelude "x = all identity [true, false]") "and [true, false]"
+      (withPrelude "x = all identity [true, false]") "and [ true, false ]"
+  ]
+
+-- ============================================================================
+-- UseFoldMap Tests
+-- ============================================================================
+
+useFoldMapTests :: Array TestResult
+useFoldMapTests =
+  [ assertWarningCount "UseFoldMap: case Nothing/Just with empty string" [useFoldMapRule]
+      (withPrelude "x mx = case mx of\n  Nothing -> \"\"\n  Just s -> f s") 1
+  , assertRuleId "UseFoldMap: correct rule id" [useFoldMapRule]
+      (withPrelude "x mx = case mx of\n  Nothing -> \"\"\n  Just s -> f s") "UseFoldMap"
+  , assertSuggestion "UseFoldMap: suggests foldMap f" [useFoldMapRule]
+      (withPrelude "x mx = case mx of\n  Nothing -> \"\"\n  Just s -> f s") "foldMap f mx"
+  , assertSuggestion "UseFoldMap: suggests lambda for complex body" [useFoldMapRule]
+      (withPrelude "x mx = case mx of\n  Nothing -> \"\"\n  Just s -> s <> \"!\"") "foldMap (\\s -> s <> \"!\") mx"
+  , assertWarningCount "UseFoldMap: reversed order Just/Nothing" [useFoldMapRule]
+      (withPrelude "x mx = case mx of\n  Just s -> f s\n  Nothing -> \"\"") 1
+  ]
+
+-- ============================================================================
+-- UseApplyFlipped Tests
+-- ============================================================================
+
+useApplyFlippedTests :: Array TestResult
+useApplyFlippedTests =
+  [ assertWarningCount "UseApplyFlipped: f lambda arg" [useApplyFlippedRule]
+      (withPrelude "x = foldMap (\\y -> y <> \"!\") xs") 1
+  , assertRuleId "UseApplyFlipped: correct rule id" [useApplyFlippedRule]
+      (withPrelude "x = foldMap (\\y -> y <> \"!\") xs") "UseApplyFlipped"
+  , assertSuggestion "UseApplyFlipped: suggests # form" [useApplyFlippedRule]
+      (withPrelude "x = foldMap (\\y -> y <> \"!\") xs") "xs # foldMap \\y -> y <> \"!\""
   ]
 
 -- ============================================================================
@@ -1245,7 +1317,7 @@ useZipTests =
   , assertRuleId "UseZip: correct rule id" [useZipRule]
       (withPrelude "x = zipWith Tuple [1] [2]") "UseZip"
   , assertSuggestion "UseZip: suggests zip" [useZipRule]
-      (withPrelude "x = zipWith Tuple [1] [2]") "zip [1] [2]"
+      (withPrelude "x = zipWith Tuple [1] [2]") "zip [ 1 ] [ 2 ]"
   ]
 
 -- ============================================================================
@@ -1291,13 +1363,190 @@ nothingBindTests =
   ]
 
 -- ============================================================================
--- Golden Tests: LintExamples.purs
+-- MonadLaw Tests
 -- ============================================================================
+
+monadLawTests :: Array TestResult
+monadLawTests =
+  [ assertWarningCount "MonadLaw: f =<< pure a" [monadLawRule]
+      (withPrelude "x = show =<< pure 42") 1
+  , assertRuleId "MonadLaw: correct rule id" [monadLawRule]
+      (withPrelude "x = show =<< pure 42") "MonadLaw"
+  , assertSuggestion "MonadLaw: suggests f a" [monadLawRule]
+      (withPrelude "x = show =<< pure 42") "show 42"
+  , assertWarningCount "MonadLaw: pure =<< m" [monadLawRule]
+      (withPrelude "x = pure =<< Just 1") 1
+  , assertSuggestion "MonadLaw: pure =<< m suggests m" [monadLawRule]
+      (withPrelude "x = pure =<< Just 1") "Just 1"
+  ]
+
+-- ============================================================================
+-- EvaluateBool Tests
+-- ============================================================================
+
+evaluateBoolTests :: Array TestResult
+evaluateBoolTests =
+  [ assertWarningCount "EvaluateBool: true && x" [evaluateBoolRule]
+      (withPrelude "x = true && foo") 1
+  , assertSuggestion "EvaluateBool: true && x -> x" [evaluateBoolRule]
+      (withPrelude "x = true && foo") "foo"
+  , assertWarningCount "EvaluateBool: false && x" [evaluateBoolRule]
+      (withPrelude "x = false && foo") 1
+  , assertSuggestion "EvaluateBool: false && x -> false" [evaluateBoolRule]
+      (withPrelude "x = false && foo") "false"
+  , assertWarningCount "EvaluateBool: true || x" [evaluateBoolRule]
+      (withPrelude "x = true || foo") 1
+  , assertSuggestion "EvaluateBool: true || x -> true" [evaluateBoolRule]
+      (withPrelude "x = true || foo") "true"
+  , assertWarningCount "EvaluateBool: false || x" [evaluateBoolRule]
+      (withPrelude "x = false || foo") 1
+  , assertSuggestion "EvaluateBool: false || x -> x" [evaluateBoolRule]
+      (withPrelude "x = false || foo") "foo"
+  , assertWarningCount "EvaluateBool: x && true" [evaluateBoolRule]
+      (withPrelude "x = foo && true") 1
+  , assertWarningCount "EvaluateBool: x || false" [evaluateBoolRule]
+      (withPrelude "x = foo || false") 1
+  ]
+
+-- ============================================================================
+-- UseFoldBool Tests
+-- ============================================================================
+
+useFoldBoolTests :: Array TestResult
+useFoldBoolTests =
+  [ assertWarningCount "UseFoldBool: foldr (&&) true" [useFoldBoolRule]
+      (withPrelude "x = foldr (&&) true xs") 1
+  , assertSuggestion "UseFoldBool: foldr (&&) true -> and" [useFoldBoolRule]
+      (withPrelude "x = foldr (&&) true xs") "and"
+  , assertWarningCount "UseFoldBool: foldr (||) false" [useFoldBoolRule]
+      (withPrelude "x = foldr (||) false xs") 1
+  , assertSuggestion "UseFoldBool: foldr (||) false -> or" [useFoldBoolRule]
+      (withPrelude "x = foldr (||) false xs") "or"
+  ]
+
+-- ============================================================================
+-- AlternativeLaw Tests
+-- ============================================================================
+
+alternativeLawTests :: Array TestResult
+alternativeLawTests =
+  [ assertWarningCount "AlternativeLaw: empty <|> x" [alternativeLawRule]
+      (withAlt "x = empty <|> foo") 1
+  , assertSuggestion "AlternativeLaw: empty <|> x -> x" [alternativeLawRule]
+      (withAlt "x = empty <|> foo") "foo"
+  , assertWarningCount "AlternativeLaw: x <|> empty" [alternativeLawRule]
+      (withAlt "x = foo <|> empty") 1
+  , assertSuggestion "AlternativeLaw: x <|> empty -> x" [alternativeLawRule]
+      (withAlt "x = foo <|> empty") "foo"
+  , assertWarningCount "AlternativeLaw: Nothing <|> x" [alternativeLawRule]
+      (withAlt "x = Nothing <|> foo") 1
+  ]
+
+-- ============================================================================
+-- EvaluateEither Tests
+-- ============================================================================
+
+evaluateEitherTests :: Array TestResult
+evaluateEitherTests =
+  [ assertWarningCount "EvaluateEither: either f g (Left x)" [evaluateEitherRule]
+      (withPrelude "x = either show identity (Left 42)") 1
+  , assertSuggestion "EvaluateEither: either f g (Left x) -> f x" [evaluateEitherRule]
+      (withPrelude "x = either show identity (Left 42)") "show 42"
+  , assertWarningCount "EvaluateEither: either f g (Right y)" [evaluateEitherRule]
+      (withPrelude "x = either show identity (Right \"hi\")") 1
+  , assertSuggestion "EvaluateEither: either f g (Right y) -> g y" [evaluateEitherRule]
+      (withPrelude "x = either show identity (Right \"hi\")") "identity \"hi\""
+  ]
+
+-- ============================================================================
+-- UseCaseOf Tests
+-- ============================================================================
+
+useCaseOfTests :: Array TestResult
+useCaseOfTests =
+  -- Positive cases: should detect
+  [ assertWarningCount "UseCaseOf: two clauses" [useCaseOfRule]
+      (withPrelude "foo True = 1\nfoo False = 0") 1
+  , assertRuleId "UseCaseOf: correct rule id" [useCaseOfRule]
+      (withPrelude "foo True = 1\nfoo False = 0") "UseCaseOf"
+  , assertSuggestion "UseCaseOf: suggestion format" [useCaseOfRule]
+      (withPrelude "foo True = 1\nfoo False = 0") "foo = case _ of\n  True -> 1\n  False -> 0"
+  , assertWarningCount "UseCaseOf: three clauses" [useCaseOfRule]
+      (withPrelude "bar Nothing = 0\nbar (Just 0) = 1\nbar (Just _) = 2") 1
+  , assertWarningCount "UseCaseOf: two args" [useCaseOfRule]
+      (withPrelude "add True True = 2\nadd True False = 1\nadd False True = 1\nadd False False = 0") 1
+  , assertSuggestion "UseCaseOf: two args suggestion" [useCaseOfRule]
+      (withPrelude "add True True = 2\nadd True False = 1\nadd False True = 1\nadd False False = 0") "add = case _, _ of\n  True, True -> 2\n  True, False -> 1\n  False, True -> 1\n  False, False -> 0"
+  
+  -- Negative cases: should NOT detect
+  , assertWarningCount "UseCaseOf: single clause" [useCaseOfRule]
+      (withPrelude "foo x = x + 1") 0
+  , assertWarningCount "UseCaseOf: no binders" [useCaseOfRule]
+      (withPrelude "foo = 42\nbar = 43") 0
+  , assertWarningCount "UseCaseOf: guarded" [useCaseOfRule]
+      (withPrelude "foo x | x > 0 = 1\nfoo x = 0") 0
+  ]
+
+-- ============================================================================
+-- FlattenCase Tests
+-- ============================================================================
+
+flattenCaseTests :: Array TestResult
+flattenCaseTests =
+  -- Positive cases: should detect
+  [ assertWarningCount "FlattenCase: two levels" [flattenCaseRule]
+      (withPrelude "foo x y = case x of\n  Just a -> case y of\n    Just b -> a + b\n    _ -> 0\n  _ -> 0") 1
+  , assertRuleId "FlattenCase: correct rule id" [flattenCaseRule]
+      (withPrelude "foo x y = case x of\n  Just a -> case y of\n    Just b -> a + b\n    _ -> 0\n  _ -> 0") "FlattenCase"
+  , assertSuggestion "FlattenCase: suggestion format" [flattenCaseRule]
+      (withPrelude "foo x y = case x of\n  Just a -> case y of\n    Just b -> a + b\n    _ -> 0\n  _ -> 0") "case x, y of\n  Just a, Just b -> a + b\n  _, _ -> 0"
+  
+  -- Negative cases: should NOT detect
+  , assertWarningCount "FlattenCase: single level" [flattenCaseRule]
+      (withPrelude "foo x = case x of\n  Just a -> a\n  _ -> 0") 0
+  , assertWarningCount "FlattenCase: different fallbacks" [flattenCaseRule]
+      (withPrelude "foo x y = case x of\n  Just a -> case y of\n    Just b -> a + b\n    _ -> 1\n  _ -> 0") 0
+  ]
+
+-- ============================================================================
+-- UsePatternGuards Tests
+-- ============================================================================
+
+usePatternGuardsTests :: Array TestResult
+usePatternGuardsTests =
+  -- Positive cases: should detect
+  [ assertWarningCount "UsePatternGuards: two levels" [usePatternGuardsRule]
+      (withPrelude "foo x y = case x of\n  Just a -> case y of\n    Just b -> a + b\n    _ -> 0\n  _ -> 0") 1
+  , assertRuleId "UsePatternGuards: correct rule id" [usePatternGuardsRule]
+      (withPrelude "foo x y = case x of\n  Just a -> case y of\n    Just b -> a + b\n    _ -> 0\n  _ -> 0") "UsePatternGuards"
+  , assertWarningCount "UsePatternGuards: three levels" [usePatternGuardsRule]
+      (withPrelude "foo x y z = case x of\n  Just a -> case y of\n    Just b -> case z of\n      Just c -> a + b + c\n      _ -> 0\n    _ -> 0\n  _ -> 0") 2
+  
+  -- Negative cases: should NOT detect
+  , assertWarningCount "UsePatternGuards: single level" [usePatternGuardsRule]
+      (withPrelude "foo x = case x of\n  Just a -> a\n  _ -> 0") 0
+  , assertWarningCount "UsePatternGuards: different fallbacks" [usePatternGuardsRule]
+      (withPrelude "foo x y = case x of\n  Just a -> case y of\n    Just b -> a + b\n    _ -> 1\n  _ -> 0") 0
+  
+  -- Fix test: verifies correct indentation relative to original branch position
+  , assertFix "UsePatternGuards: fix with proper indentation" [usePatternGuardsRule]
+      (withPrelude "foo x y = case x of\n  Just a -> case y of\n    Just b -> a + b\n    _ -> 0\n  _ -> 0")
+      (withPrelude "foo x y = case x of\n  Just a\n    | Just b <- y -> a + b\n  _ -> 0")
+  ]
+
+-- | Helper for Alternative imports
+withAlt :: String -> String
+withAlt code = """
+module Test where
+import Prelude
+import Control.Alternative (empty, (<|>))
+import Data.Maybe (Maybe(..), Nothing, Just)
+""" <> code
 
 -- | All rules for golden testing
 allRulesForGolden :: Array Rule
 allRulesForGolden =
-  [ fmapIdRule
+  [ mapIdentityRule
   , mapFusionRule
   , useTraverseRule
   , concatMapRule
@@ -1343,200 +1592,207 @@ allRulesForGolden =
   , useFindMapRule
   ]
 
--- | Assert that a specific rule fires at least once when running all rules
-assertRuleFires :: String -> String -> String -> TestResult
-assertRuleFires name source ruleId =
-  case runRules allRulesForGolden (SourceCode source) of
-    Left err -> runTest name false ("Parse error: " <> err)
-    Right (LintResult result) ->
-      let matches = Array.filter (\(LintWarning w) -> unwrap w.ruleId == ruleId) result.warnings
-      in if Array.length matches > 0
-         then runTest name true "OK"
-         else runTest name false ("Rule " <> ruleId <> " did not fire")
+goldenTests :: Effect (Array TestResult)
+goldenTests = traverse identity
+  -- MapIdentity: map identity x -> x
+  [ assertFixFormatted "Golden: MapIdentity fix" [mapIdentityRule]
+      (withPrelude "x = map identity [ 1, 2, 3 ]")
+      (withPrelude "x = [ 1, 2, 3 ]")
+  
+  -- MapFusion: map f (map g x) -> map (f <<< g) x
+  , assertFixFormatted "Golden: MapFusion fix" [mapFusionRule]
+      (withPrelude "x = map show (map (_ + 1) [ 1, 2, 3 ])")
+      (withPrelude "x = map (show <<< (_ + 1)) [ 1, 2, 3 ]")
+  
+  -- UseTraverse: sequence (map f x) -> mapM f x
+  , assertFixFormatted "Golden: UseTraverse fix" [useTraverseRule]
+      (withPrelude "x f xs = sequence (map f xs)")
+      (withPrelude "x f xs = mapM f xs")
+  
+  -- ConcatMap: join (map f x) -> (=<<) f x
+  , assertFixFormatted "Golden: ConcatMap fix" [concatMapRule]
+      (withPrelude "x f xs = join (map f xs)")
+      (withPrelude "x f xs = (=<<) f xs")
+  
+  -- NotEqual: not (a == b) -> a /= b
+  , assertFixFormatted "Golden: NotEqual fix" [notEqualRule]
+      (withPrelude "x a b = not (a == b)")
+      (withPrelude "x a b = a /= b")
+  
+  -- EtaReduce: \x -> f x -> f
+  , assertFixFormatted "Golden: EtaReduce fix" [etaReduceRule]
+      (withPrelude "x = \\y -> show y")
+      (withPrelude "x = show")
+  
+  -- RedundantBind: pure x >>= f -> f x
+  , assertFixFormatted "Golden: RedundantBind fix" [redundantBindRule]
+      (withPrelude "x y f = pure y >>= f")
+      (withPrelude "x y f = f y")
+  
+  -- RedundantIf: if a then true else false -> a
+  , assertFixFormatted "Golden: RedundantIf fix" [redundantIfRule]
+      (withPrelude "x a = if a then true else false")
+      (withPrelude "x a = a")
+  
+  -- UseVoid: a *> pure unit -> void a
+  , assertFixFormatted "Golden: UseVoid fix" [useVoidRule]
+      (withPrelude "x a = a *> pure unit")
+      (withPrelude "x a = void a")
+  
+  -- UseJoin: x >>= identity -> join x
+  , assertFixFormatted "Golden: UseJoin fix" [useJoinRule]
+      (withPrelude "x m = m >>= identity")
+      (withPrelude "x m = join m")
+  
+  -- UseAny: or (map f x) -> any f x
+  , assertFixFormatted "Golden: UseAny fix" [useAnyRule]
+      (withPrelude "x f xs = or (map f xs)")
+      (withPrelude "x f xs = any f xs")
+  
+  -- UseAll: and (map f x) -> all f x
+  , assertFixFormatted "Golden: UseAll fix" [useAllRule]
+      (withPrelude "x f xs = and (map f xs)")
+      (withPrelude "x f xs = all f xs")
+  
+  -- BooleanSimplify: x == true -> x
+  , assertFixFormatted "Golden: BooleanSimplify fix" [booleanSimplifyRule]
+      (withPrelude "x a = a == true")
+      (withPrelude "x a = a")
+  
+  -- CollapseLambdas: \x -> \y -> body -> \x y -> body
+  , assertFixFormatted "Golden: CollapseLambdas fix" [collapseLambdasRule]
+      (withPrelude "x = \\a -> \\b -> a + b")
+      (withPrelude "x = \\a b -> a + b")
+  
+  -- UseConst: \x -> y -> const y (where y doesn't mention x)
+  , assertFixFormatted "Golden: UseConst fix" [useConstRule]
+      (withPrelude "x = \\unused -> 42")
+      (withPrelude "x = const 42")
+  
+  -- UseNull: length xs == 0 -> null xs
+  , assertFixFormatted "Golden: UseNull fix" [useNullRule]
+      (withPrelude "x xs = length xs == 0")
+      (withPrelude "x xs = null xs")
+  
+  -- UseFromMaybe: maybe def identity -> fromMaybe def
+  , assertFixFormatted "Golden: UseFromMaybe fix" [useFromMaybeRule]
+      (withPrelude "x def = maybe def identity")
+      (withPrelude "x def = fromMaybe def")
+  
+  -- UseIsJust: maybe false (const true) -> isJust
+  , assertFixFormatted "Golden: UseIsJust fix" [useIsJustRule]
+      (withPrelude "x = maybe false (const true)")
+      (withPrelude "x = isJust")
+  
+  -- UseIsNothing: maybe true (const false) -> isNothing
+  , assertFixFormatted "Golden: UseIsNothing fix" [useIsNothingRule]
+      (withPrelude "x = maybe true (const false)")
+      (withPrelude "x = isNothing")
+  
+  -- UseWhen: if cond then action else pure unit -> when cond action
+  , assertFixFormatted "Golden: UseWhen fix" [useWhenRule]
+      (withPrelude "x cond action = if cond then action else pure unit")
+      (withPrelude "x cond action = when cond action")
+  
+  -- UseUnless: if cond then pure unit else action -> unless cond action
+  , assertFixFormatted "Golden: UseUnless fix" [useUnlessRule]
+      (withPrelude "x cond action = if cond then pure unit else action")
+      (withPrelude "x cond action = unless cond action")
+  
+  -- RedundantFlip: flip (flip f) -> f
+  , assertFixFormatted "Golden: RedundantFlip fix" [redundantFlipRule]
+      (withPrelude "x f = flip (flip f)")
+      (withPrelude "x f = f")
+  
+  -- UseNotElem: not (elem x xs) -> notElem x xs
+  , assertFixFormatted "Golden: UseNotElem fix" [useNotElemRule]
+      (withPrelude "x a xs = not (elem a xs)")
+      (withPrelude "x a xs = notElem a xs")
+  
+  -- UseMinMax: if a > b then a else b -> max a b
+  , assertFixFormatted "Golden: UseMinMax fix" [useMinMaxRule]
+      (withPrelude "x a b = if a > b then a else b")
+      (withPrelude "x a b = max a b")
+  
+  -- MonoidIdentity: mempty <> x -> x
+  , assertFixFormatted "Golden: MonoidIdentity fix" [monoidIdentityRule]
+      (withPrelude "x xs = mempty <> xs")
+      (withPrelude "x xs = xs")
+  
+  -- UseFold: foldMap identity -> fold
+  , assertFixFormatted "Golden: UseFold fix" [useFoldRule]
+      (withPrelude "x = foldMap identity")
+      (withPrelude "x = fold")
+  
+  -- UseSequence: traverse identity -> sequence
+  , assertFixFormatted "Golden: UseSequence fix" [useSequenceRule]
+      (withPrelude "x = traverse identity")
+      (withPrelude "x = sequence")
+  
+  -- RedundantNot: not (not x) -> x
+  , assertFixFormatted "Golden: RedundantNot fix" [redundantNotRule]
+      (withPrelude "x a = not (not a)")
+      (withPrelude "x a = a")
+  
+  -- UseFstSnd: \(Tuple x _) -> x -> fst
+  , assertFixFormatted "Golden: UseFstSnd fix" [useFstSndRule]
+      (withPrelude "x = \\(Tuple a b) -> a")
+      (withPrelude "x = fst")
+  
+  -- UseMapMaybe: catMaybes (map f x) -> mapMaybe f x
+  , assertFixFormatted "Golden: UseMapMaybe fix" [useMapMaybeRule]
+      (withPrelude "x f xs = catMaybes (map f xs)")
+      (withPrelude "x f xs = mapMaybe f xs")
+  
+  -- UseApplicative: pure f <*> x -> f <$> x
+  , assertFixFormatted "Golden: UseApplicative fix" [useApplicativeRule]
+      (withPrelude "x f y = pure f <*> y")
+      (withPrelude "x f y = f <$> y")
+  
+  -- UseBindFlip: join (map f x) -> x >>= f
+  , assertFixFormatted "Golden: UseBindFlip fix" [useBindFlipRule]
+      (withPrelude "x f y = join (map f y)")
+      (withPrelude "x f y = y >>= f")
+  
+  -- UseFor: flip traverse -> for
+  , assertFixFormatted "Golden: UseFor fix" [useForRule]
+      (withPrelude "x = flip traverse")
+      (withPrelude "x = for")
+  
+  -- RedundantGuard: guard true -> pure unit
+  , assertFixFormatted "Golden: RedundantGuard fix" [redundantGuardRule]
+      (withPrelude "x = guard true")
+      (withPrelude "x = pure unit")
+  
+  -- UseComparing: \a b -> compare (f a) (f b) -> comparing f
+  , assertFixFormatted "Golden: UseComparing fix" [useComparingRule]
+      (withPrelude "x f = \\a b -> compare (f a) (f b)")
+      (withPrelude "x f = comparing f")
+  
+  -- UseOn: \a b -> f (g a) (g b) -> on f g
+  , assertFixFormatted "Golden: UseOn fix" [useOnRule]
+      (withPrelude "x f g = \\a b -> f (g a) (g b)")
+      (withPrelude "x f g = on f g")
+  
+  -- UseFindMap: head (mapMaybe f x) -> findMap f x
+  , assertFixFormatted "Golden: UseFindMap fix" [useFindMapRule]
+      (withPrelude "x f xs = head (mapMaybe f xs)")
+      (withPrelude "x f xs = findMap f xs")
+  
+  -- LetToDo: nested let...in -> do notation (do on previous line)
+  , pure $ assertFix "Golden: LetToDo nested fix" [letToDoRule]
+      (withPrelude "x f =\n  case f of\n    Just y ->\n      let\n        z = y + 1\n      in z * 2\n    Nothing -> 0")
+      (withPrelude "x f =\n  case f of\n    Just y -> do\n      let\n        z = y + 1\n      z * 2\n    Nothing -> 0")
 
--- | The embedded LintExamples source
-lintExamplesSource :: String
-lintExamplesSource = """module Test.LintExamples where
+  -- LetToDo: should NOT fire on do-let (no "in" keyword)
+  , pure $ assertWarningCount "Golden: LetToDo no fire on do-let" [letToDoRule]
+      (withPrelude "x f =\n  case f of\n    Just y -> do\n      let\n        z = y + 1\n      [ z ]\n    Nothing -> []")
+      0
 
-import Prelude
-
-import Control.Alternative
-import Control.Monad
-import Data.Array
-import Data.Foldable
-import Data.Maybe
-import Data.Monoid
-import Data.Ord
-import Data.Traversable
-import Data.Tuple
-
--- FmapId
-fmapId1 = map identity [ 1, 2, 3 ]
-
--- MapFusion
-mapFusion1 = map show (map (_ + 1) [ 1, 2, 3 ])
-
--- UseTraverse
-useTraverse1 f xs = sequence (map f xs)
-
--- ConcatMap
-concatMap1 f xs = join (map f xs)
-
--- NotEqual
-notEqual1 x y = not (x == y)
-
--- UseGuard
-useGuard1 cond action = if cond then action else pure unit
-
--- EtaReduce
-etaReduce1 = \x -> show x
-
--- EtaReduceDecl
-etaReduceDecl1 x = show x
-
--- RedundantBind
-redundantBind1 x f = pure x >>= f
-
--- LetToWhere
-letToWhere1 y z = let x = y in z
-
--- RedundantIf
-redundantIf1 a = if a then true else false
-
--- UseVoid
-useVoid1 a = a *> pure unit
-
--- UseJoin
-useJoin1 x = x >>= identity
-
--- UseAny
-useAny1 f xs = or (map f xs)
-
--- UseAll
-useAll1 f xs = and (map f xs)
-
--- BooleanSimplify
-booleanSimplify1 x = x == true
-
--- CollapseLambdas
-collapseLambdas1 = \x -> \y -> x + y
-
--- UseConst
-useConst1 = \x -> 42
-
--- UseNull
-useNull1 xs = length xs == 0
-
--- UseFromMaybe
-useFromMaybe1 def = maybe def identity
-
--- UseIsJust
-useIsJust1 = maybe false (const true)
-
--- UseIsNothing
-useIsNothing1 = maybe true (const false)
-
--- UseWhen
-useWhen1 cond action = if cond then action else pure unit
-
--- UseUnless
-useUnless1 cond action = if cond then pure unit else action
-
--- RedundantFlip
-redundantFlip1 f = flip (flip f)
-
--- UseNotElem
-useNotElem1 x xs = not (elem x xs)
-
--- UseMinMax
-useMax1 a b = if a > b then a else b
-
--- MonoidIdentity
-monoidIdentity1 x = mempty <> x
-
--- UseFold
-useFold1 = foldMap identity
-
--- UseSequence
-useSequence1 = traverse identity
-
--- UseTraverseSequence
-useTraverseSequence1 f xs = sequence (map f xs)
-
--- RedundantNot
-redundantNot1 x = not (not x)
-
--- UseFstSnd
-useFst1 = \(Tuple x y) -> x
-
--- UseMapMaybe
-useMapMaybe1 = catMaybes (map f [1,2,3])
-
--- UseApplicative
-useApplicative1 = pure f <*> x
-
--- UseBindFlip
-useBindFlip1 = join (map f x)
-
--- UseFor
-useFor1 = flip traverse
-
--- RedundantGuard
-redundantGuard1 = guard true
-
--- UseComparing
-useComparing1 = \a b -> compare (f a) (f b)
-
--- UseOn
-useOn1 = \a b -> f (g a) (g b)
-
--- UseFindMap
-useFindMap1 = head (mapMaybe f [1,2,3])
-"""
-
-goldenTests :: Array TestResult
-goldenTests =
-  [ assertRuleFires "Golden: FmapId fires" lintExamplesSource "FmapId"
-  , assertRuleFires "Golden: MapFusion fires" lintExamplesSource "MapFusion"
-  , assertRuleFires "Golden: UseTraverse fires" lintExamplesSource "UseTraverse"
-  , assertRuleFires "Golden: ConcatMap fires" lintExamplesSource "ConcatMap"
-  , assertRuleFires "Golden: NotEqual fires" lintExamplesSource "NotEqual"
-  , assertRuleFires "Golden: UseGuard fires" lintExamplesSource "UseGuard"
-  , assertRuleFires "Golden: EtaReduce fires" lintExamplesSource "EtaReduce"
-  , assertRuleFires "Golden: EtaReduceDecl fires" lintExamplesSource "EtaReduceDecl"
-  , assertRuleFires "Golden: RedundantBind fires" lintExamplesSource "RedundantBind"
-  , assertRuleFires "Golden: LetToWhere fires" lintExamplesSource "LetToWhere"
-  , assertRuleFires "Golden: RedundantIf fires" lintExamplesSource "RedundantIf"
-  , assertRuleFires "Golden: UseVoid fires" lintExamplesSource "UseVoid"
-  , assertRuleFires "Golden: UseJoin fires" lintExamplesSource "UseJoin"
-  , assertRuleFires "Golden: UseAny fires" lintExamplesSource "UseAny"
-  , assertRuleFires "Golden: UseAll fires" lintExamplesSource "UseAll"
-  , assertRuleFires "Golden: BooleanSimplify fires" lintExamplesSource "BooleanSimplify"
-  , assertRuleFires "Golden: CollapseLambdas fires" lintExamplesSource "CollapseLambdas"
-  , assertRuleFires "Golden: UseConst fires" lintExamplesSource "UseConst"
-  , assertRuleFires "Golden: UseNull fires" lintExamplesSource "UseNull"
-  , assertRuleFires "Golden: UseFromMaybe fires" lintExamplesSource "UseFromMaybe"
-  , assertRuleFires "Golden: UseIsJust fires" lintExamplesSource "UseIsJust"
-  , assertRuleFires "Golden: UseIsNothing fires" lintExamplesSource "UseIsNothing"
-  , assertRuleFires "Golden: UseWhen fires" lintExamplesSource "UseWhen"
-  , assertRuleFires "Golden: UseUnless fires" lintExamplesSource "UseUnless"
-  , assertRuleFires "Golden: RedundantFlip fires" lintExamplesSource "RedundantFlip"
-  , assertRuleFires "Golden: UseNotElem fires" lintExamplesSource "UseNotElem"
-  , assertRuleFires "Golden: UseMinMax fires" lintExamplesSource "UseMinMax"
-  , assertRuleFires "Golden: MonoidIdentity fires" lintExamplesSource "MonoidIdentity"
-  , assertRuleFires "Golden: UseFold fires" lintExamplesSource "UseFold"
-  , assertRuleFires "Golden: UseSequence fires" lintExamplesSource "UseSequence"
-  , assertRuleFires "Golden: UseTraverseSequence fires" lintExamplesSource "UseTraverseSequence"
-  , assertRuleFires "Golden: RedundantNot fires" lintExamplesSource "RedundantNot"
-  , assertRuleFires "Golden: UseFstSnd fires" lintExamplesSource "UseFstSnd"
-  , assertRuleFires "Golden: UseMapMaybe fires" lintExamplesSource "UseMapMaybe"
-  , assertRuleFires "Golden: UseApplicative fires" lintExamplesSource "UseApplicative"
-  , assertRuleFires "Golden: UseBindFlip fires" lintExamplesSource "UseBindFlip"
-  , assertRuleFires "Golden: UseFor fires" lintExamplesSource "UseFor"
-  , assertRuleFires "Golden: RedundantGuard fires" lintExamplesSource "RedundantGuard"
-  , assertRuleFires "Golden: UseComparing fires" lintExamplesSource "UseComparing"
-  , assertRuleFires "Golden: UseOn fires" lintExamplesSource "UseOn"
-  , assertRuleFires "Golden: UseFindMap fires" lintExamplesSource "UseFindMap"
+  -- UsePatternGuards: should preserve do-let body structure
+  , pure $ assertFix "Golden: UsePatternGuards preserves do-let" [usePatternGuardsRule]
+      (withPrelude "checkExpr expr =\n  case expr of\n    Just mapArgs ->\n      case toArray mapArgs of\n        [ x, y ] -> do\n          let\n            f = show x\n            g = show y\n          [ f, g ]\n        _ -> []\n    _ -> []")
+      (withPrelude "checkExpr expr =\n  case expr of\n    Just mapArgs\n      | [ x, y ] <- toArray mapArgs -> do\n          let\n            f = show x\n            g = show y\n          [ f, g ]\n    _ -> [ ]")
   ]
 
 -- ============================================================================
@@ -1575,7 +1831,7 @@ tidySuggestions =
   , { name: "traverse f xs", suggestion: "traverse f xs" }
   , { name: "collapsed lambda", suggestion: "\\a b -> a + b" }
   , { name: "map fusion", suggestion: "map (f <<< g) x" }
-  , { name: "fmap fusion", suggestion: "(f <<< g) <$> x" }
+  , { name: "map fusion with <$>", suggestion: "(f <<< g) <$> x" }
   , { name: "flipped map fusion", suggestion: "x <#> (g >>> f)" }
   , { name: "where clause", suggestion: "y + 1\n  where\n  y = 1" }
   ]

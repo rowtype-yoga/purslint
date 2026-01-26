@@ -2,6 +2,7 @@ module Purelint.Config where
 
 import Prelude
 
+import Data.Array (notElem)
 import Data.Array as Array
 import Data.String as String
 import Purelint.Types (RuleId(..))
@@ -18,24 +19,22 @@ defaultConfig =
 
 -- | Parse simple line-based config
 parseConfig :: String -> Config
-parseConfig str = 
-  let 
-    lines = String.split (String.Pattern "\n") str
-    nonEmpty = Array.filter (\l -> String.length l > 0 && not (isComment l)) lines
-    rules = map (RuleId <<< String.trim) nonEmpty
-  in
-    { disabledRules: rules }
-
+parseConfig str =
+  { disabledRules: rules }
   where
+  lines = str # String.split (String.Pattern "\n")
+  nonEmpty = lines # Array.filter \l -> String.length l > 0 && not (isComment l)
+  rules = (RuleId <<< String.trim) <$> nonEmpty
+
   isComment :: String -> Boolean
-  isComment line = 
-    let trimmed = String.trim line
-    in String.take 1 trimmed == "#"
+  isComment line = (trimmed # String.take 1) == "#"
+    where
+    trimmed = String.trim line
 
 -- | Check if a rule is enabled given the config
 isRuleEnabled :: Config -> RuleId -> Boolean
-isRuleEnabled config ruleId = not (Array.elem ruleId config.disabledRules)
+isRuleEnabled config ruleId = notElem ruleId config.disabledRules
 
 -- | Filter rules by config
 filterRules :: forall a. Array { ruleId :: RuleId | a } -> Config -> Array { ruleId :: RuleId | a }
-filterRules rules config = Array.filter (\r -> isRuleEnabled config r.ruleId) rules
+filterRules rules config = rules # Array.filter \r -> r.ruleId # isRuleEnabled config

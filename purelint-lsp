@@ -1,0 +1,2 @@
+#!/bin/bash
+exec node /Users/mark/Developer/purelint/dist/purelint-lsp.js "$@"

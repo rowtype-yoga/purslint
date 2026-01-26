@@ -25,13 +25,10 @@ useBindFlipRule = mkRule (RuleId "UseBindFlip") run
 
   checkExpr :: ImportInfo -> Expr Void -> Array LintWarning
   checkExpr imports expr = case expr of
-    -- Match: join (map f x)
     ExprApp fnExpr args
-      | isJoin imports fnExpr ->
-        case NEA.toArray args of
-          [AppTerm innerExpr] ->
-            checkInnerMap imports expr (unwrapParens innerExpr)
-          _ -> []
+      | isJoin imports fnExpr
+      , [ AppTerm innerExpr ] <- NEA.toArray args ->
+          checkInnerMap imports expr (unwrapParens innerExpr)
     _ -> []
 
   unwrapParens :: Expr Void -> Expr Void
@@ -41,25 +38,23 @@ useBindFlipRule = mkRule (RuleId "UseBindFlip") run
   checkInnerMap :: ImportInfo -> Expr Void -> Expr Void -> Array LintWarning
   checkInnerMap imports fullExpr innerExpr =
     case innerExpr of
-      ExprApp mapFn mapArgs | isMap imports mapFn ->
-        case NEA.toArray mapArgs of
-          [AppTerm fExpr, AppTerm xExpr] ->
+      ExprApp mapFn mapArgs
+        | isMap imports mapFn
+        , [ AppTerm fExpr, AppTerm xExpr ] <- NEA.toArray mapArgs -> do
             let
               f = printExpr fExpr
               x = printExpr xExpr
-            in
-              [ LintWarning
-                  { ruleId: RuleId "UseBindFlip"
-                  , message: WarningMessage "join (map f x) can be simplified to x >>= f"
-                  , range: rangeOf fullExpr
-                  , severity: Warning
-                  , suggestion: Just $ Suggestion
-                      { replacement: ReplacementText (x <> " >>= " <> f)
-                      , description: SuggestionDescription "Use >>= instead of join composed with map"
-                      }
-                  }
-              ]
-          _ -> []
+            [ LintWarning
+                { ruleId: RuleId "UseBindFlip"
+                , message: WarningMessage "join (map f x) can be simplified to x >>= f"
+                , range: rangeOf fullExpr
+                , severity: Warning
+                , suggestion: Just $ Suggestion
+                    { replacement: ReplacementText (x <> " >>= " <> f)
+                    , description: SuggestionDescription "Use >>= instead of join composed with map"
+                    }
+                }
+            ]
       _ -> []
 
   isJoin :: ImportInfo -> Expr Void -> Boolean

@@ -16,7 +16,7 @@ import PureScript.CST.Types (AppSpine(..), Expr(..), Ident(..), Module, Operator
 
 -- | Rule: pure f <*> x -> f <$> x
 useApplicativeRule :: Rule
-useApplicativeRule = mkRule (RuleId "UseApplicative") run
+useApplicativeRule = run # mkRule (RuleId "UseApplicative")
   where
   run :: RuleContext -> Module Void -> Array LintWarning
   run ctx = foldMapModule visitor
@@ -26,34 +26,26 @@ useApplicativeRule = mkRule (RuleId "UseApplicative") run
 
   checkExpr :: ImportInfo -> Expr Void -> Array LintWarning
   checkExpr imports expr = case expr of
-    -- Match: pure f <*> x
     ExprOp lhs ops
-      | hasOp imports "<*>" ->
-        case unwrapParens lhs of
-          ExprApp pureExpr args
-            | isPure imports pureExpr ->
-              case NEA.toArray args of
-                [AppTerm fExpr] ->
-                  case NEA.toArray ops of
-                    [Tuple (QualifiedName { name: Operator "<*>" }) xExpr] ->
-                      let
-                        f = printExpr fExpr
-                        x = printExpr xExpr
-                      in
-                        [ LintWarning
-                            { ruleId: RuleId "UseApplicative"
-                            , message: WarningMessage "pure f <*> x can be simplified to f <$> x"
-                            , range: rangeOf expr
-                            , severity: Hint
-                            , suggestion: Just $ Suggestion
-                                { replacement: ReplacementText (f <> " <$> " <> x)
-                                , description: SuggestionDescription "Use <$> instead of pure f <*> x"
-                                }
-                            }
-                        ]
-                    _ -> []
-                _ -> []
-          _ -> []
+      | hasOp imports "<*>"
+      , ExprApp pureExpr args <- unwrapParens lhs
+      , isPure imports pureExpr
+      , [ AppTerm fExpr ] <- NEA.toArray args
+      , [ Tuple (QualifiedName { name: Operator "<*>" }) xExpr ] <- NEA.toArray ops -> do
+          let
+            f = printExpr fExpr
+            x = printExpr xExpr
+          [ LintWarning
+              { ruleId: RuleId "UseApplicative"
+              , message: WarningMessage "pure f <*> x can be simplified to f <$> x"
+              , range: rangeOf expr
+              , severity: Hint
+              , suggestion: Just $ Suggestion
+                  { replacement: ReplacementText (f <> " <$> " <> x)
+                  , description: SuggestionDescription "Use <$> instead of pure f <*> x"
+                  }
+              }
+          ]
     _ -> []
 
   unwrapParens :: Expr Void -> Expr Void

@@ -4,7 +4,6 @@ import Prelude
 
 import Data.Array.NonEmpty as NEA
 import Data.Maybe (Maybe(..))
-import Data.Void (Void)
 import Purelint.Imports (ImportInfo, hasValue)
 import Purelint.Print (printExpr)
 import Purelint.Rule (Rule, RuleContext, mkRule)
@@ -27,13 +26,10 @@ concatMapRule = mkRule (RuleId "ConcatMap") run
   checkExpr :: ImportInfo -> Expr Void -> Array LintWarning
   checkExpr imports expr = case expr of
     -- Match: concat (map f x) or join (map f x)
-    ExprApp fnExpr args ->
-      case fnExpr of
-        ExprIdent qn | isConcatOrJoin imports qn ->
-          case NEA.head args of
-            AppTerm innerExpr -> checkInnerMap imports expr qn (unwrapParens innerExpr)
-            _ -> []
-        _ -> []
+    ExprApp (ExprIdent qn) args
+      | qn # isConcatOrJoin imports
+      , AppTerm innerExpr <- NEA.head args ->
+          checkInnerMap imports expr qn (unwrapParens innerExpr)
     _ -> []
 
   unwrapParens :: Expr Void -> Expr Void
@@ -41,12 +37,12 @@ concatMapRule = mkRule (RuleId "ConcatMap") run
   unwrapParens e = e
 
   checkInnerMap :: ImportInfo -> Expr Void -> QualifiedName Ident -> Expr Void -> Array LintWarning
-  checkInnerMap imports fullExpr fnQn innerExpr = 
+  checkInnerMap imports fullExpr fnQn innerExpr =
     case innerExpr of
-      ExprApp mapFn innerArgs | isMapApp imports mapFn ->
-        case NEA.toArray innerArgs of
-          [AppTerm fExpr, AppTerm xExpr] ->
-            let 
+      ExprApp mapFn innerArgs
+        | isMapApp imports mapFn
+        , [ AppTerm fExpr, AppTerm xExpr ] <- NEA.toArray innerArgs ->
+            let
               fnName = getIdentName fnQn
               replacementFn = if fnName == "concat" then "concatMap" else "(=<<)"
               f = printExpr fExpr
@@ -65,7 +61,6 @@ concatMapRule = mkRule (RuleId "ConcatMap") run
                       }
                   }
               ]
-          _ -> []
       _ -> []
 
   isMapApp :: ImportInfo -> Expr Void -> Boolean
@@ -73,11 +68,11 @@ concatMapRule = mkRule (RuleId "ConcatMap") run
   isMapApp _ _ = false
 
   isMap :: ImportInfo -> QualifiedName Ident -> Boolean
-  isMap imports (QualifiedName { name: Ident name }) = 
-    (name == "map" && hasValue imports "map") || (name == "fmap" && hasValue imports "fmap")
+  isMap imports (QualifiedName { name: Ident name }) =
+    name == "map" && hasValue imports "map"
 
   isConcatOrJoin :: ImportInfo -> QualifiedName Ident -> Boolean
-  isConcatOrJoin imports (QualifiedName { name: Ident name }) = 
+  isConcatOrJoin imports (QualifiedName { name: Ident name }) =
     (name == "concat" && hasValue imports "concat") || (name == "join" && hasValue imports "join")
 
   getIdentName :: QualifiedName Ident -> String

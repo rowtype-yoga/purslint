@@ -10,7 +10,7 @@ test1 xs = sequenceA (map pure xs)
 -- MapFusion: map f (map g x) -> map (f <<< g) x
 test2 xs = map show (map (_ + 1) xs)
 
--- FmapId: map identity x -> x
+-- MapIdentity: map identity x -> x
 test3 xs = map identity xs
 
 -- NotEqual: not (a == b) -> a /= b

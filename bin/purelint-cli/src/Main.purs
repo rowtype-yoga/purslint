@@ -20,12 +20,17 @@ import Purelint.Rules.CollapseLambdas (collapseLambdasRule)
 import Purelint.Rules.ConcatMap (concatMapRule)
 import Purelint.Rules.EtaReduce (etaReduceRule)
 import Purelint.Rules.EtaReduceDecl (etaReduceDeclRule)
+import Purelint.Rules.AlternativeLaw (alternativeLawRule)
+import Purelint.Rules.EvaluateBool (evaluateBoolRule)
 import Purelint.Rules.EvaluateConst (evaluateConstRule)
+import Purelint.Rules.EvaluateEither (evaluateEitherRule)
 import Purelint.Rules.EvaluateFst (evaluateFstRule)
-import Purelint.Rules.FmapId (fmapIdRule)
+import Purelint.Rules.MapIdentity (mapIdentityRule)
 import Purelint.Rules.FunctorLaw (functorLawRule)
+import Purelint.Rules.LetToDo (letToDoRule)
 import Purelint.Rules.LetToWhere (letToWhereRule)
 import Purelint.Rules.MapFusion (mapFusionRule)
+import Purelint.Rules.MonadLaw (monadLawRule)
 import Purelint.Rules.MonoidIdentity (monoidIdentityRule)
 import Purelint.Rules.NotEqual (notEqualRule)
 import Purelint.Rules.NothingBind (nothingBindRule)
@@ -42,6 +47,7 @@ import Purelint.Rules.UseAll (useAllRule)
 import Purelint.Rules.UseAnd (useAndRule)
 import Purelint.Rules.UseAny (useAnyRule)
 import Purelint.Rules.UseApplicative (useApplicativeRule)
+import Purelint.Rules.UseApplyFlipped (useApplyFlippedRule)
 import Purelint.Rules.UseBimap (useBimapRule)
 import Purelint.Rules.UseBindFlip (useBindFlipRule)
 import Purelint.Rules.UseBreak (useBreakRule)
@@ -51,6 +57,8 @@ import Purelint.Rules.UseEitherMap (useEitherMapRule)
 import Purelint.Rules.UseElemIndex (useElemIndexRule)
 import Purelint.Rules.UseFindMap (useFindMapRule)
 import Purelint.Rules.UseFold (useFoldRule)
+import Purelint.Rules.UseFoldBool (useFoldBoolRule)
+import Purelint.Rules.UseFoldMap (useFoldMapRule)
 import Purelint.Rules.UseFoldMapId (useFoldMapIdRule)
 import Purelint.Rules.UseFor (useForRule)
 import Purelint.Rules.UseFromJust (useFromJustRule)
@@ -71,6 +79,7 @@ import Purelint.Rules.UseNotElem (useNotElemRule)
 import Purelint.Rules.UseNull (useNullRule)
 import Purelint.Rules.UseOn (useOnRule)
 import Purelint.Rules.UseOr (useOrRule)
+import Purelint.Rules.UsePatternGuards (usePatternGuardsRule)
 import Purelint.Rules.UseReplicate (useReplicateRule)
 import Purelint.Rules.UseSequence (useSequenceRule)
 import Purelint.Rules.UseSpan (useSpanRule)
@@ -78,6 +87,7 @@ import Purelint.Rules.UseTraverse (useTraverseRule)
 import Purelint.Rules.UseTraverseSequence (useTraverseSequenceRule)
 import Purelint.Rules.UseUncurry (useUncurryRule)
 import Purelint.Rules.UseUnless (useUnlessRule)
+import Purelint.Rules.UseUnwrap (useUnwrapRule)
 import Purelint.Rules.UseVoid (useVoidRule)
 import Purelint.Rules.UseWhen (useWhenRule)
 import Purelint.Rules.UseZip (useZipRule)
@@ -85,20 +95,25 @@ import Purelint.Rules.WhenNot (whenNotRule)
 import Purelint.Runner (runRules)
 import Purelint.Types (LintResult(..), LintWarning(..), Severity(..), SourceCode(..), Suggestion(..))
 
--- | All available rules (70 total)
+-- | All available rules (76 total)
 allRules :: Array Rule
 allRules =
-  [ booleanSimplifyRule
+  [ alternativeLawRule
+  , booleanSimplifyRule
   , collapseLambdasRule
   , concatMapRule
   , etaReduceRule
   , etaReduceDeclRule
+  , evaluateBoolRule
   , evaluateConstRule
+  , evaluateEitherRule
   , evaluateFstRule
-  , fmapIdRule
+  , mapIdentityRule
   , functorLawRule
+  , letToDoRule
   , letToWhereRule
   , mapFusionRule
+  , monadLawRule
   , monoidIdentityRule
   , notEqualRule
   , nothingBindRule
@@ -115,6 +130,7 @@ allRules =
   , useAndRule
   , useAnyRule
   , useApplicativeRule
+  , useApplyFlippedRule
   , useBimapRule
   , useBindFlipRule
   , useBreakRule
@@ -124,6 +140,8 @@ allRules =
   , useElemIndexRule
   , useFindMapRule
   , useFoldRule
+  , useFoldBoolRule
+  , useFoldMapRule
   , useFoldMapIdRule
   , useForRule
   , useFromJustRule
@@ -144,6 +162,7 @@ allRules =
   , useNullRule
   , useOnRule
   , useOrRule
+  , usePatternGuardsRule
   , useReplicateRule
   , useSequenceRule
   , useSpanRule
@@ -151,6 +170,7 @@ allRules =
   , useTraverseSequenceRule
   , useUncurryRule
   , useUnlessRule
+  , useUnwrapRule
   , useVoidRule
   , useWhenRule
   , useZipRule
@@ -173,6 +193,7 @@ formatRange r = show (r.start.line + 1) <> ":" <> show (r.start.column + 1) <> "
 
 -- | Format severity for display  
 formatSeverity :: Severity -> String
+formatSeverity Refactor = "[refactor]"
 formatSeverity Hint = "[hint]"
 formatSeverity Warning = "[warning]"
 formatSeverity Error = "[error]"

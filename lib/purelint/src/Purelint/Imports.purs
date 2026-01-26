@@ -53,7 +53,7 @@ preludeModules = Set.fromFoldable
 -- | Standard Prelude values we care about
 standardValues :: Set String
 standardValues = Set.fromFoldable
-  [ "map", "fmap", "identity", "id", "not"
+  [ "map", "identity", "id", "not"
   , "traverse", "traverse_", "sequenceA", "sequence", "for", "for_"
   , "concat", "concatMap", "bind", "pure", "join"
   , "when", "unless"
@@ -62,11 +62,11 @@ standardValues = Set.fromFoldable
   , "const", "void"
   , "maybe", "fromMaybe", "isJust", "isNothing", "Nothing", "Just"
   , "flip", "elem", "notElem", "elemIndex", "findIndex"
-  , "mempty", "fold", "foldMap"
+  , "mempty", "fold", "foldMap", "foldr", "foldl"
   , "fst", "snd", "uncurry"
   , "max", "min", "minimum", "maximum"
   , "compare", "comparing", "on"
-  , "guard"
+  , "guard", "empty"
   , "catMaybes", "mapMaybe", "findMap"
   , "either", "Left", "Right"
   , "bimap", "first", "second"
@@ -80,7 +80,7 @@ standardValues = Set.fromFoldable
 standardOps :: Set String  
 standardOps = Set.fromFoldable
   [ "<$>", "<#>", "<*>", ">>=", "=<<", ">>", "*>", "<<<", ">>>", "==", "/="
-  , "<>", ">", ">=", "<", "<=", "$>", "!!"
+  , "<>", ">", ">=", "<", "<=", "$>", "!!", "<|>", "&&", "||"
   ]
 
 -- | Extract import information from a module

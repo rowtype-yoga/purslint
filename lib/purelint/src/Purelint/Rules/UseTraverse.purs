@@ -28,14 +28,11 @@ useTraverseRule = mkRule (RuleId "UseTraverse") run
 
   checkExpr :: ImportInfo -> Expr Void -> Array LintWarning
   checkExpr imports expr = case expr of
-    -- Match: sequenceA (map f x) or sequenceA (f <$> x) or sequenceA (fmap f x)
-    ExprApp fnExpr args ->
-      case fnExpr of
-        ExprIdent qn | isSequenceA imports qn || isSequence imports qn ->
-          case NEA.head args of
-            AppTerm innerExpr -> checkInnerArg imports expr qn (unwrapParens innerExpr)
-            _ -> []
-        _ -> []
+    -- Match: sequenceA (map f x) or sequenceA (f <$> x)
+    ExprApp (ExprIdent qn) args
+      | isSequenceA imports qn || isSequence imports qn
+      , AppTerm innerExpr <- NEA.head args ->
+          checkInnerArg imports expr qn (unwrapParens innerExpr)
     _ -> []
 
   -- | Unwrap parentheses to get the inner expression
@@ -47,17 +44,21 @@ useTraverseRule = mkRule (RuleId "UseTraverse") run
   checkInnerArg imports fullExpr seqQn innerExpr = 
     case innerExpr of
       -- Match: map f x
-      ExprApp mapFn mapArgs | isMapLikeApp imports mapFn ->
-        case NEA.toArray mapArgs of
-          [AppTerm fExpr, AppTerm xExpr] ->
+      ExprApp mapFn mapArgs
+        | isMapLikeApp imports mapFn
+        , [AppTerm fExpr, AppTerm xExpr] <- NEA.toArray mapArgs ->
             mkWarning fullExpr seqQn (printExpr fExpr) (printExpr xExpr)
-          _ -> mkWarningTemplate fullExpr seqQn
+      ExprApp mapFn _
+        | isMapLikeApp imports mapFn ->
+            mkWarningTemplate fullExpr seqQn
       -- Match: f <$> x (operator form)
-      ExprOp lhs ops | hasMapOperator imports ops ->
-        case NEA.toArray ops of
-          [Tuple _ rhs] ->
+      ExprOp lhs ops
+        | hasMapOperator imports ops
+        , [Tuple _ rhs] <- NEA.toArray ops ->
             mkWarning fullExpr seqQn (printExpr lhs) (printExpr rhs)
-          _ -> mkWarningTemplate fullExpr seqQn
+      ExprOp _ ops
+        | hasMapOperator imports ops ->
+            mkWarningTemplate fullExpr seqQn
       _ -> []
 
   mkWarning :: Expr Void -> QualifiedName Ident -> String -> String -> Array LintWarning
@@ -71,7 +72,7 @@ useTraverseRule = mkRule (RuleId "UseTraverse") run
     in
       [ LintWarning
           { ruleId: RuleId "UseTraverse"
-          , message: WarningMessage $ "Use " <> replacement <> replacementSuffix <> " instead of " <> seqName <> " composed with map/fmap/<$>"
+          , message: WarningMessage $ "Use " <> replacement <> replacementSuffix <> " instead of " <> seqName <> " composed with map / <$>"
           , range
           , severity: Warning
           , suggestion: Just $ Suggestion
@@ -91,7 +92,7 @@ useTraverseRule = mkRule (RuleId "UseTraverse") run
     in
       [ LintWarning
           { ruleId: RuleId "UseTraverse"
-          , message: WarningMessage $ "Use " <> replacement <> replacementSuffix <> " instead of " <> seqName <> " composed with map/fmap/<$>"
+          , message: WarningMessage $ "Use " <> replacement <> replacementSuffix <> " instead of " <> seqName <> " composed with map / <$>"
           , range
           , severity: Warning
           , suggestion: Nothing  -- No auto-fix for complex patterns

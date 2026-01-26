@@ -2,8 +2,6 @@
 import * as fs from 'fs';
 
 // PureScript Maybe representation that works for both standard and optimized backends
-// Standard: { value0: x } for Just, Nothing.value for Nothing
-// Optimized: { tag: 1, _1: x } for Just, { tag: 0 } for Nothing
 const mkJust = (x) => ({ tag: 1, _1: x, value0: x });
 const mkNothing = { tag: 0 };
 
@@ -38,13 +36,17 @@ export const readMessage = () => {
     return mkJust(msg);
   }
   
-  // Need to read more data synchronously from stdin
-  const fd = fs.openSync('/dev/stdin', 'r');
-  
+  // Read synchronously from stdin fd (0)
   try {
     while (true) {
       const chunk = Buffer.alloc(4096);
-      const bytesRead = fs.readSync(fd, chunk, 0, 4096);
+      let bytesRead;
+      try {
+        bytesRead = fs.readSync(0, chunk, 0, 4096);
+      } catch (e) {
+        // EAGAIN or other read error
+        return mkNothing;
+      }
       
       if (bytesRead === 0) {
         // EOF
@@ -60,8 +62,6 @@ export const readMessage = () => {
     }
   } catch (e) {
     return mkNothing;
-  } finally {
-    fs.closeSync(fd);
   }
 };
 

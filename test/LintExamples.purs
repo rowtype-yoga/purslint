@@ -10,24 +10,24 @@ import Data.Traversable (class Traversable, sequence, traverse)
 import Data.Tuple (Tuple(..), fst, snd)
 
 -- ============================================================================
--- FmapId: map identity x -> x
+-- MapIdentity: map identity x -> x
 -- ============================================================================
 
 -- | map identity x -> x
-fmapId1 :: Array Int
-fmapId1 = map identity [ 1, 2, 3 ]
+mapIdentity1 :: Array Int
+mapIdentity1 = map identity [ 1, 2, 3 ]
 
--- | fmap identity x -> x (same as map in PureScript)
-fmapId2 :: Array Int
-fmapId2 = map identity [ 1, 2, 3 ]
+-- | map identity x -> x (same as map in PureScript)
+mapIdentity2 :: Array Int
+mapIdentity2 = map identity [ 1, 2, 3 ]
 
 -- | identity <$> x -> x
-fmapId3 :: Array Int
-fmapId3 = identity <$> [ 1, 2, 3 ]
+mapIdentity3 :: Array Int
+mapIdentity3 = identity <$> [ 1, 2, 3 ]
 
 -- | x <#> identity -> x
-fmapId4 :: Array Int
-fmapId4 = [ 1, 2, 3 ] <#> identity
+mapIdentity4 :: Array Int
+mapIdentity4 = [ 1, 2, 3 ] <#> identity
 
 -- ============================================================================
 -- MapFusion: map f (map g x) -> map (f <<< g) x

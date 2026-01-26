@@ -34,48 +34,35 @@ etaReduceDeclRule = mkRule (RuleId "EtaReduceDecl") run
     -- Check for pattern: foo x = expr x (single binder, unconditional)
     case vb.guarded of
       Unconditional _ (Where { expr, bindings: Nothing }) ->
-        checkEtaReducible vb.binders (unwrapParens expr)
+        unwrapParens expr # checkEtaReducible vb.binders
       _ -> []
 
   checkEtaReducible :: Array (Binder Void) -> Expr Void -> Array LintWarning
-  checkEtaReducible binders body =
-    -- Get the last binder if it's a simple variable
-    case Array.last binders of
-      Just lastBinder@(BinderVar (Name { name: Ident paramName })) ->
-        -- Check if body is `f ... x` where x is our param
-        case body of
-          ExprApp fn args ->
-            let argsArr = NEA.toArray args in
-            case Array.last argsArr of
-              Just (AppTerm (ExprIdent (QualifiedName { name: Ident argName })))
-                | argName == paramName 
-                  && not (mentionsParam paramName fn)
-                  && not (Array.any (checkArgMentions paramName) (Array.dropEnd 1 argsArr)) ->
-                  -- Can eta reduce - build the new RHS
-                  let 
-                    remainingArgs = Array.dropEnd 1 argsArr
-                    newRhs = if Array.null remainingArgs 
-                             then printExpr fn
-                             else printExpr fn <> " " <> Array.intercalate " " (map printAppSpine remainingArgs)
-                    -- Range from last binder to end of body
-                    binderRange = rangeOf lastBinder
-                    bodyRange = rangeOf body
-                    fullRange = { start: binderRange.start, end: bodyRange.end }
-                  in
-                    [ LintWarning
-                        { ruleId: RuleId "EtaReduceDecl"
-                        , message: WarningMessage "Declaration can be eta reduced"
-                        , range: fullRange
-                        , severity: Hint
-                        , suggestion: Just $ Suggestion
-                            { replacement: ReplacementText ("= " <> newRhs)
-                            , description: SuggestionDescription "Remove redundant parameter"
-                            }
-                        }
-                    ]
-              _ -> []
-          _ -> []
-      _ -> []
+  checkEtaReducible binders body
+    | Just lastBinder@(BinderVar (Name { name: Ident paramName })) <- Array.last binders
+    , ExprApp fn args <- body
+    , argsArr <- NEA.toArray args
+    , Just (AppTerm (ExprIdent (QualifiedName { name: Ident argName }))) <- Array.last argsArr
+    , argName == paramName
+    , not mentionsParam paramName fn
+    , remainingArgs <- Array.dropEnd 1 argsArr
+    , not (Array.any (checkArgMentions paramName) remainingArgs)
+    , newRhs <-
+        if Array.null remainingArgs then printExpr fn
+        else printExpr fn <> " " <> Array.intercalate " " (map printAppSpine remainingArgs)
+    , fullRange <- { start: (rangeOf lastBinder).start, end: (rangeOf body).end } =
+        [ LintWarning
+            { ruleId: RuleId "EtaReduceDecl"
+            , message: WarningMessage "Declaration can be eta reduced"
+            , range: fullRange
+            , severity: Hint
+            , suggestion: Just $ Suggestion
+                { replacement: ReplacementText ("= " <> newRhs)
+                , description: SuggestionDescription "Remove redundant parameter"
+                }
+            }
+        ]
+    | otherwise = []
 
   printAppSpine :: AppSpine Expr Void -> String
   printAppSpine (AppTerm e) = printExpr e
@@ -92,7 +79,7 @@ etaReduceDeclRule = mkRule (RuleId "EtaReduceDecl") run
   -- Check if expression mentions the parameter
   mentionsParam :: String -> Expr Void -> Boolean
   mentionsParam name (ExprIdent (QualifiedName { name: Ident n })) = n == name
-  mentionsParam name (ExprApp fn args) = 
+  mentionsParam name (ExprApp fn args) =
     mentionsParam name fn || Array.any (checkArg name) (NEA.toArray args)
   mentionsParam name (ExprParens (Wrapped { value })) = mentionsParam name value
   mentionsParam _ _ = false
