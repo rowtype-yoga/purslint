@@ -704,19 +704,21 @@ collapseLambdasTests =
 
 useConstTests :: Array TestResult
 useConstTests =
-  -- Positive cases
-  [ assertWarningCount "UseConst: \\x -> y (unused)" [useConstRule]
-      (withPrelude "x = \\a -> 42") 1
+  -- Positive cases: only fires on wildcard binder \_
+  [ assertWarningCount "UseConst: \\_ -> y" [useConstRule]
+      (withPrelude "x = \\_ -> 42") 1
   , assertRuleId "UseConst: correct rule id" [useConstRule]
-      (withPrelude "x = \\a -> 42") "UseConst"
+      (withPrelude "x = \\_ -> 42") "UseConst"
   , assertSuggestion "UseConst: suggests const" [useConstRule]
-      (withPrelude "x = \\a -> 42") "const 42"
+      (withPrelude "x = \\_ -> 42") "const 42"
   
   -- Negative cases
+  , assertWarningCount "UseConst: no fire on named param (compiler warns)" [useConstRule]
+      (withPrelude "x = \\a -> 42") 0
   , assertWarningCount "UseConst: no fire when param used" [useConstRule]
       (withPrelude "x = \\a -> a + 1") 0
   , assertWarningCount "UseConst: no fire without import" [useConstRule]
-      (withoutImports "x = \\a -> 42") 0
+      (withoutImports "x = \\_ -> 42") 0
   ]
 
 -- ============================================================================
@@ -1260,6 +1262,10 @@ useFoldMapTests =
       (withPrelude "x mx = case mx of\n  Just s | s > \"\" -> f s\n  _ -> \"\"") 0
   , assertWarningCount "UseFoldMap: no fire on where binding in Just branch" [useFoldMapRule]
       (withPrelude "x mx = case mx of\n  Just s -> g s where g = f\n  Nothing -> \"\"") 0
+  
+  -- Multiline body inside if-then-else should generate proper suggestion with correct indentation
+  , assertSuggestion "UseFoldMap: multiline in if-then-else" [useFoldMapRule]
+      (withPrelude "checkExpr args = case args of\n  [firstArg, secondArg] ->\n    if isLeft firstArg then\n      case getRightComposed secondArg of\n        Just f ->\n          let fText = show f\n          in\n            [ fText ]\n        Nothing -> []\n    else []") "foldMap\n        ( \\f ->\n            let fText = show f\n            in\n              [ fText ]\n        )\n        (getRightComposed secondArg)"
   ]
 
 -- ============================================================================
@@ -1681,6 +1687,30 @@ redundantParensTests =
       (withPrelude "f = case _ of\n  (x : xs) -> x\n  _ -> 0") 0
   , assertWarningCount "RedundantParens: no fire on typed case pattern" [redundantParensRule]
       (withPrelude "f = case _ of\n  (x :: Int) -> x") 0
+  
+  -- Type-level redundant parens
+  , assertWarningCount "RedundantParens: nested type parens" [redundantParensRule]
+      (withPrelude "x :: ((Int))\nx = 1") 1
+  , assertSuggestion "RedundantParens: nested type parens suggestion" [redundantParensRule]
+      (withPrelude "x :: ((Int))\nx = 1") "(Int)"
+  , assertWarningCount "RedundantParens: type app with atomic arg" [redundantParensRule]
+      (withPrelude "x :: Maybe (Int)\nx = Nothing") 1
+  , assertSuggestion "RedundantParens: type app atomic arg suggestion" [redundantParensRule]
+      (withPrelude "x :: Maybe (Int)\nx = Nothing") "Int"
+  , assertWarningCount "RedundantParens: type app with type var" [redundantParensRule]
+      (withPrelude "x :: forall a. Maybe (a)\nx = Nothing") 1
+  , assertWarningCount "RedundantParens: arrow left simple" [redundantParensRule]
+      (withPrelude "x :: (Int) -> String\nx = show") 1
+  , assertWarningCount "RedundantParens: record field type" [redundantParensRule]
+      (withPrelude "type R = { x :: (Int) }") 1
+  
+  -- Type-level negative cases
+  , assertWarningCount "RedundantParens: no fire on function type in arg" [redundantParensRule]
+      (withPrelude "x :: (Int -> Int) -> Int\nx f = f 1") 0
+  , assertWarningCount "RedundantParens: no fire on forall in arg" [redundantParensRule]
+      (withPrelude "x :: (forall a. a -> a) -> Int\nx f = f 1") 0
+  , assertWarningCount "RedundantParens: no fire on constrained type" [redundantParensRule]
+      (withPrelude "x :: (Show a) => a -> String\nx = show") 0
   ]
 
 -- | Helper for Alternative imports
@@ -1813,9 +1843,9 @@ goldenTests = traverse identity
       (withPrelude "x = \\a -> \\b -> a + b")
       (withPrelude "x = \\a b -> a + b")
   
-  -- UseConst: \x -> y -> const y (where y doesn't mention x)
+  -- UseConst: \_ -> y -> const y
   , assertFixFormatted "Golden: UseConst fix" [useConstRule]
-      (withPrelude "x = \\unused -> 42")
+      (withPrelude "x = \\_ -> 42")
       (withPrelude "x = const 42")
   
   -- UseNull: length xs == 0 -> null xs
@@ -1947,6 +1977,16 @@ goldenTests = traverse identity
   , pure $ assertFix "Golden: UseFoldMap preserves multiline body" [useFoldMapRule]
       (withPrelude "checkExpr mx =\n  case mx of\n    Just p ->\n      let\n        pText = show p\n      in\n        [ pText ]\n    Nothing -> []")
       (withPrelude "checkExpr mx =\n  foldMap\n    ( \\p ->\n        let\n          pText = show p\n        in\n          [ pText ]\n    )\n    mx")
+  
+  -- UseEitherMap: either Left (Right <<< f) -> map f
+  , pure $ assertFix "Golden: UseEitherMap basic" [useEitherMapRule]
+      (withPrelude "x = either Left (Right <<< show)")
+      (withPrelude "x = map show")
+  
+  -- UseConst: \_ -> multiline body -> const (multiline body)
+  , pure $ assertFix "Golden: UseConst preserves multiline body" [useConstRule]
+      (withPrelude "x =\n  foldMap\n    ( \\_ ->\n        [ LintWarning\n            { ruleId: RuleId \"UseEitherMap\"\n            , message: WarningMessage \"either Left (Right <<< f) can be simplified to map f\"\n            }\n        ]\n    )\n    secondArg")
+      (withPrelude "x =\n  foldMap\n    ( const\n        [ LintWarning\n            { ruleId: RuleId \"UseEitherMap\"\n            , message: WarningMessage \"either Left (Right <<< f) can be simplified to map f\"\n            }\n        ]\n    )\n    secondArg")
   ]
 
 -- ============================================================================

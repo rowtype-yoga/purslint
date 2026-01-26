@@ -13,7 +13,7 @@ import Data.Void (Void)
 import PureScript.CST.Print (printToken, printSourceToken)
 import PureScript.CST.Range (tokensOf)
 import PureScript.CST.Range.TokenList as TokenList
-import PureScript.CST.Types (Binder, Expr, SourceToken, Token(..))
+import PureScript.CST.Types (Binder, Expr, SourceToken, Token(..), Type)
 
 -- | Print an expression back to source code with tidy-style formatting
 printExpr :: Expr Void -> String
@@ -35,6 +35,12 @@ printExprNoComments = printExpr
 printBinder :: Binder Void -> String
 printBinder binder = do
   let tokens = TokenList.toArray (tokensOf binder)
+  printTokens tokens
+
+-- | Print a type back to source code with tidy-style formatting
+printType :: Type Void -> String
+printType typ = do
+  let tokens = TokenList.toArray (tokensOf typ)
   printTokens tokens
 
 -- | Print tokens with tidy-style spacing

@@ -29,44 +29,45 @@ useBreakRule = mkRule (RuleId "UseBreak") run
     -- Match: span (not <<< p) x
     ExprApp fn args
       | isSpan imports fn ->
-        case NEA.toArray args of
-          [AppTerm predArg, AppTerm xArg] ->
-            case getNotComposedPred imports predArg of
-              Just p ->
-                let
-                  pText = printExpr p
-                  x = printExpr xArg
-                in
-                  [ LintWarning
-                      { ruleId: RuleId "UseBreak"
-                      , message: WarningMessage "span (not <<< p) can be simplified to break p"
-                      , range: rangeOf expr
-                      , severity: Hint
-                      , suggestion: Just $ Suggestion
-                          { replacement: ReplacementText ("break " <> pText <> " " <> x)
-                          , description: SuggestionDescription "Use break instead of span with negated predicate"
-                          }
-                      }
-                  ]
-              Nothing -> []
-          [AppTerm predArg] ->
-            case getNotComposedPred imports predArg of
-              Just p ->
-                let pText = printExpr p
-                in
-                  [ LintWarning
-                      { ruleId: RuleId "UseBreak"
-                      , message: WarningMessage "span (not <<< p) can be simplified to break p"
-                      , range: rangeOf expr
-                      , severity: Hint
-                      , suggestion: Just $ Suggestion
-                          { replacement: ReplacementText ("break " <> pText)
-                          , description: SuggestionDescription "Use break instead of span with negated predicate"
-                          }
-                      }
-                  ]
-              Nothing -> []
-          _ -> []
+          case NEA.toArray args of
+            [ AppTerm predArg, AppTerm xArg ] ->
+              case getNotComposedPred imports predArg of
+                Just p ->
+                  let
+                    pText = printExpr p
+                    x = printExpr xArg
+                  in
+                    [ LintWarning
+                        { ruleId: RuleId "UseBreak"
+                        , message: WarningMessage "span (not <<< p) can be simplified to break p"
+                        , range: rangeOf expr
+                        , severity: Hint
+                        , suggestion: Just $ Suggestion
+                            { replacement: ReplacementText ("break " <> pText <> " " <> x)
+                            , description: SuggestionDescription "Use break instead of span with negated predicate"
+                            }
+                        }
+                    ]
+                Nothing -> []
+            [ AppTerm predArg ] ->
+              case getNotComposedPred imports predArg of
+                Just p ->
+                  let
+                    pText = printExpr p
+                  in
+                    [ LintWarning
+                        { ruleId: RuleId "UseBreak"
+                        , message: WarningMessage "span (not <<< p) can be simplified to break p"
+                        , range: rangeOf expr
+                        , severity: Hint
+                        , suggestion: Just $ Suggestion
+                            { replacement: ReplacementText ("break " <> pText)
+                            , description: SuggestionDescription "Use break instead of span with negated predicate"
+                            }
+                        }
+                    ]
+                Nothing -> []
+            _ -> []
     _ -> []
 
   unwrapParens :: Expr Void -> Expr Void
@@ -89,7 +90,7 @@ useBreakRule = mkRule (RuleId "UseBreak") run
     case unwrapParens predExpr of
       ExprApp notFn args
         | isNot imports notFn ->
-          case NEA.toArray args of
-            [AppTerm p] -> Just p
-            _ -> Nothing
+            case NEA.toArray args of
+              [ AppTerm p ] -> Just p
+              _ -> Nothing
       _ -> Nothing

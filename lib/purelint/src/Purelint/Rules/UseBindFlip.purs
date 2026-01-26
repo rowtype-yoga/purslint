@@ -58,11 +58,11 @@ useBindFlipRule = mkRule (RuleId "UseBindFlip") run
       _ -> []
 
   isJoin :: ImportInfo -> Expr Void -> Boolean
-  isJoin imports (ExprIdent (QualifiedName { name: Ident name })) =
-    name == "join" && hasValue imports "join"
-  isJoin _ _ = false
+  isJoin = case _, _ of
+    imports, ExprIdent (QualifiedName { name: Ident name }) -> name == "join" && hasValue imports "join"
+    _, _ -> false
 
   isMap :: ImportInfo -> Expr Void -> Boolean
-  isMap imports (ExprIdent (QualifiedName { name: Ident name })) =
-    name == "map" && hasValue imports "map"
-  isMap _ _ = false
+  isMap = case _, _ of
+    imports, ExprIdent (QualifiedName { name: Ident name }) -> name == "map" && hasValue imports "map"
+    _, _ -> false

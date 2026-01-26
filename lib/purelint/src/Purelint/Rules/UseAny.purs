@@ -56,6 +56,6 @@ useAnyRule = mkRule (RuleId "UseAny") run
   isOr _ _ = false
 
   isMapLike :: ImportInfo -> Expr Void -> Boolean
-  isMapLike imports (ExprIdent (QualifiedName { name: Ident name })) =
-    name == "map" && hasValue imports "map"
-  isMapLike _ _ = false
+  isMapLike = case _, _ of
+    imports, (ExprIdent (QualifiedName { name: Ident name })) -> name == "map" && hasValue imports "map"
+    _, _ -> false

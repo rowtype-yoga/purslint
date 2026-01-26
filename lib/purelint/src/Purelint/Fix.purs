@@ -5,6 +5,7 @@ import Prelude
 import Data.Array as Array
 import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..))
+import Data.Monoid (power)
 import Data.Newtype (un, unwrap)
 import Data.String as String
 import Data.String.CodeUnits as StringCU
@@ -72,22 +73,39 @@ applyFix source (LintWarning w) = do
   Just $ replaceRange source w.range replacement
 
 -- | Apply all fixes to source code (in reverse order to preserve ranges)
+-- | Skips overlapping fixes to avoid corruption
 applyAllFixes :: String -> LintResult -> String
 applyAllFixes source (LintResult result) =
   -- Sort warnings by range in reverse order (end of file first)
-  Array.foldl applyFixIfPossible source sortedWarnings
+  -- Then fold, tracking applied ranges to skip overlaps
+  _.source $ Array.foldl applyFixIfPossible { source, appliedRanges: [] } sortedWarnings
   where
   sortedWarnings = result.warnings # Array.sortBy compareRangesReverse
 
   compareRangesReverse :: LintWarning -> LintWarning -> Ordering
   compareRangesReverse (LintWarning a) (LintWarning b) =
     -- Compare in reverse: later positions first
-    case a.range.start.line # compare b.range.start.line of
-      EQ -> a.range.start.column # compare b.range.start.column
+    case compare b.range.start.line a.range.start.line of
+      EQ -> compare b.range.start.column a.range.start.column
       other -> other
 
-  applyFixIfPossible :: String -> LintWarning -> String
-  applyFixIfPossible src warning =
-    case warning # applyFix src of
-      Nothing -> src
-      Just fixed -> fixed
+  applyFixIfPossible :: { source :: String, appliedRanges :: Array SourceRange } -> LintWarning -> { source :: String, appliedRanges :: Array SourceRange }
+  applyFixIfPossible acc (LintWarning w) =
+    -- Skip if this warning overlaps with any already-applied range
+    if Array.any (overlaps w.range) acc.appliedRanges then
+      acc
+    else case w.suggestion of
+      Nothing -> acc
+      Just (Suggestion s) ->
+        let replacement = s.replacement # un ReplacementText
+        in { source: replaceRange acc.source w.range replacement
+           , appliedRanges: Array.cons w.range acc.appliedRanges
+           }
+
+  -- Check if two ranges overlap
+  overlaps :: SourceRange -> SourceRange -> Boolean
+  overlaps a b =
+    not (aEndsBeforeB || bEndsBeforeA)
+    where
+    aEndsBeforeB = a.end.line < b.start.line || (a.end.line == b.start.line && a.end.column <= b.start.column)
+    bEndsBeforeA = b.end.line < a.start.line || (b.end.line == a.start.line && b.end.column <= a.start.column)

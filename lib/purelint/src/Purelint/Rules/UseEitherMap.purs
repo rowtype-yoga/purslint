@@ -3,16 +3,17 @@ module Purelint.Rules.UseEitherMap where
 import Prelude
 
 import Data.Array.NonEmpty as NEA
+import Data.Foldable (foldMap)
 import Data.Maybe (Maybe(..))
+import Data.Tuple (Tuple(..))
 import Data.Void (Void)
+import PureScript.CST.Range (rangeOf)
+import PureScript.CST.Traversal (defaultMonoidalVisitor, foldMapModule)
+import PureScript.CST.Types (AppSpine(..), Expr(..), Ident(..), Module, Operator(..), QualifiedName(..), Wrapped(..))
 import Purelint.Imports (ImportInfo, hasValue)
 import Purelint.Print (printExpr)
 import Purelint.Rule (Rule, RuleContext, mkRule)
 import Purelint.Types (LintWarning(..), RuleId(..), Severity(..), Suggestion(..), SuggestionDescription(..), ReplacementText(..), WarningMessage(..))
-import PureScript.CST.Range (rangeOf)
-import PureScript.CST.Traversal (defaultMonoidalVisitor, foldMapModule)
-import PureScript.CST.Types (AppSpine(..), Expr(..), Ident(..), Module, Operator(..), QualifiedName(..), Wrapped(..))
-import Data.Tuple (Tuple(..))
 
 -- | Rule: either Left (Right <<< f) -> map f
 useEitherMapRule :: Rule
@@ -29,48 +30,49 @@ useEitherMapRule = mkRule (RuleId "UseEitherMap") run
     -- Match: either Left (Right <<< f)
     ExprApp fn args
       | isEither imports fn ->
-        case NEA.toArray args of
-          [AppTerm firstArg, AppTerm secondArg] ->
-            if isLeft imports firstArg then
-              case getRightComposed imports secondArg of
-                Just f ->
-                  let fText = printExpr f
-                  in
-                    [ LintWarning
-                        { ruleId: RuleId "UseEitherMap"
-                        , message: WarningMessage "either Left (Right <<< f) can be simplified to map f"
-                        , range: rangeOf expr
-                        , severity: Warning
-                        , suggestion: Just $ Suggestion
-                            { replacement: ReplacementText ("map " <> fText)
-                            , description: SuggestionDescription "Use map instead of either Left (Right <<< f)"
-                            }
-                        }
-                    ]
-                Nothing -> []
-            else []
-          [AppTerm firstArg, AppTerm secondArg, AppTerm xArg] ->
-            if isLeft imports firstArg then
-              case getRightComposed imports secondArg of
-                Just f ->
-                  let
-                    fText = printExpr f
-                    x = printExpr xArg
-                  in
-                    [ LintWarning
-                        { ruleId: RuleId "UseEitherMap"
-                        , message: WarningMessage "either Left (Right <<< f) x can be simplified to map f x"
-                        , range: rangeOf expr
-                        , severity: Warning
-                        , suggestion: Just $ Suggestion
-                            { replacement: ReplacementText ("map " <> fText <> " " <> x)
-                            , description: SuggestionDescription "Use map instead of either Left (Right <<< f)"
-                            }
-                        }
-                    ]
-                Nothing -> []
-            else []
-          _ -> []
+          case NEA.toArray args of
+            [ AppTerm firstArg, AppTerm secondArg ] ->
+              if isLeft imports firstArg then
+                foldMap
+                  ( \f -> do
+                      let
+                        fText = printExpr f
+                      [ LintWarning
+                          { ruleId: RuleId "UseEitherMap"
+                          , message: WarningMessage "either Left (Right <<< f) can be simplified to map f"
+                          , range: rangeOf expr
+                          , severity: Warning
+                          , suggestion: Just $ Suggestion
+                              { replacement: ReplacementText ("map " <> fText)
+                              , description: SuggestionDescription "Use map instead of either Left (Right <<< f)"
+                              }
+                          }
+                      ]
+                  )
+                  (getRightComposed imports secondArg)
+              else []
+            [ AppTerm firstArg, AppTerm secondArg, AppTerm xArg ] ->
+              if isLeft imports firstArg then
+                case getRightComposed imports secondArg of
+                  Just f ->
+                    let
+                      fText = printExpr f
+                      x = printExpr xArg
+                    in
+                      [ LintWarning
+                          { ruleId: RuleId "UseEitherMap"
+                          , message: WarningMessage "either Left (Right <<< f) x can be simplified to map f x"
+                          , range: rangeOf expr
+                          , severity: Warning
+                          , suggestion: Just $ Suggestion
+                              { replacement: ReplacementText ("map " <> fText <> " " <> x)
+                              , description: SuggestionDescription "Use map instead of either Left (Right <<< f)"
+                              }
+                          }
+                      ]
+                  Nothing -> []
+              else []
+            _ -> []
     _ -> []
 
   unwrapParens :: Expr Void -> Expr Void
@@ -104,9 +106,9 @@ useEitherMapRule = mkRule (RuleId "UseEitherMap") run
     case unwrapParens e of
       ExprOp lhs ops ->
         case NEA.toArray ops of
-          [Tuple (QualifiedName { name: Operator "<<<" }) rhs]
+          [ Tuple (QualifiedName { name: Operator "<<<" }) rhs ]
             | isRight imports lhs -> Just rhs
-          [Tuple (QualifiedName { name: Operator ">>>" }) rhs]
+          [ Tuple (QualifiedName { name: Operator ">>>" }) rhs ]
             | isRight imports rhs -> Just lhs
           _ -> Nothing
       _ -> Nothing

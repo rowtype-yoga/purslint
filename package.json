@@ -18,9 +18,7 @@
     "test": "spago test",
     "test:lsp": "node test-lsp/test-lsp.mjs",
     "test:vscode": "cd vscode-extension && npm test",
-    "test:all": "npm test && npm run test:lsp && npm run test:vscode",
-    "dev:cli": "node bin/purelint.js",
-    "dev:lsp": "node bin/purelint-lsp.js"
+    "test:all": "npm test && npm run test:lsp && npm run test:vscode"
   },
   "keywords": [
     "purescript",

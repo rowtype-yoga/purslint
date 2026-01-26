@@ -69,6 +69,7 @@ import Purelint.Rules.UseBreak (useBreakRule)
 import Purelint.Rules.UseSpan (useSpanRule)
 import Purelint.Rules.UseMinimumSort (useMinimumSortRule)
 import Purelint.Rules.UseBimap (useBimapRule)
+import Purelint.Rules.UseDollar (useDollarRule)
 import Purelint.Rules.UseEitherMap (useEitherMapRule)
 import Purelint.Rules.AlternativeLaw (alternativeLawRule)
 import Purelint.Rules.EvaluateBool (evaluateBoolRule)
@@ -92,6 +93,9 @@ import Purelint.Rules.NothingBind (nothingBindRule)
 import Purelint.Rules.UseElemIndex (useElemIndexRule)
 import Purelint.Rules.UseFoldBool (useFoldBoolRule)
 import Purelint.Rules.UsePatternGuards (usePatternGuardsRule)
+import Purelint.Rules.UseCaseOf (useCaseOfRule)
+import Purelint.Rules.FlattenCase (flattenCaseRule)
+import Purelint.Rules.RedundantParens (redundantParensRule)
 import Purelint.Runner (runRules)
 import Purelint.Types (LintResult(..), LintWarning(..), RuleId(..), Severity(..), SourceCode(..), Suggestion(..))
 import Unsafe.Coerce (unsafeCoerce)
@@ -177,6 +181,10 @@ allRules =
   , nothingBindRule
   , useElemIndexRule
   , usePatternGuardsRule
+  , useCaseOfRule
+  , flattenCaseRule
+  , redundantParensRule
+  , useDollarRule
   ]
 
 -- | Get enabled rules based on config

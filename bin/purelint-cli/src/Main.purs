@@ -53,6 +53,7 @@ import Purelint.Rules.UseBindFlip (useBindFlipRule)
 import Purelint.Rules.UseBreak (useBreakRule)
 import Purelint.Rules.UseComparing (useComparingRule)
 import Purelint.Rules.UseConst (useConstRule)
+import Purelint.Rules.UseDollar (useDollarRule)
 import Purelint.Rules.UseEitherMap (useEitherMapRule)
 import Purelint.Rules.UseElemIndex (useElemIndexRule)
 import Purelint.Rules.UseFindMap (useFindMapRule)
@@ -92,6 +93,7 @@ import Purelint.Rules.UseVoid (useVoidRule)
 import Purelint.Rules.UseWhen (useWhenRule)
 import Purelint.Rules.UseZip (useZipRule)
 import Purelint.Rules.WhenNot (whenNotRule)
+import Purelint.Rules.RedundantParens (redundantParensRule)
 import Purelint.Runner (runRules)
 import Purelint.Types (LintResult(..), LintWarning(..), Severity(..), SourceCode(..), Suggestion(..))
 
@@ -124,6 +126,7 @@ allRules =
   , redundantIfRule
   , redundantNegateRule
   , redundantNotRule
+  , redundantParensRule
   , redundantReverseRule
   , unlessNotRule
   , useAllRule
@@ -136,6 +139,7 @@ allRules =
   , useBreakRule
   , useComparingRule
   , useConstRule
+  , useDollarRule
   , useEitherMapRule
   , useElemIndexRule
   , useFindMapRule

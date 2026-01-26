@@ -5,17 +5,18 @@ import Prelude
 import Data.Array as Array
 import Data.Array.NonEmpty as NEA
 import Data.Maybe (Maybe(..))
-import Data.Tuple (Tuple(..))
+import Data.Monoid (power)
+import Data.String as String
 import Data.Void (Void)
 import Purelint.Imports (ImportInfo, hasValue)
-import Purelint.Print (printExpr)
+import Purelint.Print (printExpr, printExprMultiline)
 import Purelint.Rule (Rule, RuleContext, mkRule)
 import Purelint.Types (LintWarning(..), RuleId(..), Severity(..), Suggestion(..), SuggestionDescription(..), ReplacementText(..), WarningMessage(..))
 import PureScript.CST.Range (rangeOf)
 import PureScript.CST.Traversal (defaultMonoidalVisitor, foldMapModule)
-import PureScript.CST.Types (AppSpine(..), Binder(..), Expr(..), Ident(..), Module, Name(..), QualifiedName(..), Wrapped(..))
+import PureScript.CST.Types (Binder(..), Expr(..), Module)
 
--- | Rule: \x -> y (where y doesn't use x) -> const y
+-- | Rule: \_ -> y -> const y
 -- | Only triggers when the binder is a simple unused variable
 useConstRule :: Rule
 useConstRule = mkRule (RuleId "UseConst") run
@@ -30,10 +31,44 @@ useConstRule = mkRule (RuleId "UseConst") run
   checkExpr imports expr = case expr of
     ExprLambda lambda | hasValue imports "const" ->
       case NEA.toArray lambda.binders of
-        [BinderVar (Name { name: Ident paramName })] ->
-          -- Check if body doesn't mention the parameter
-          if not (mentionsVar paramName lambda.body) then
-            let bodyText = printExpr lambda.body
+        -- Only match wildcard binder: \_ -> body
+        -- Named unused params like \f -> body are already warned by the compiler
+        [BinderWildcard _] ->
+            let
+              bodyRange = rangeOf lambda.body
+              isMultiline = bodyRange.start.line /= bodyRange.end.line
+              replacement = 
+                if isMultiline then
+                  -- Preserve multiline structure: const\n<original body>
+                  let
+                    bodyStr = printExprMultiline lambda.body
+                    -- Get the column where the body starts for indent reference
+                    bodyCol = bodyRange.start.column
+                    indent n = power " " n
+                    -- The first line has no indentation (due to trim), subsequent lines have original
+                    lines = String.split (String.Pattern "\n") bodyStr
+                    -- Find minimum non-empty line indent from lines AFTER the first
+                    minIndent = case Array.tail lines of
+                      Nothing -> 0
+                      Just rest -> rest
+                        # Array.filter (\l -> String.trim l /= "")
+                        # map getIndent
+                        # Array.foldl min 999
+                    -- Re-indent: first line gets bodyCol indent, rest get normalized
+                    reindented = case Array.uncons lines of
+                      Nothing -> ""
+                      Just { head: first, tail: rest } ->
+                        let 
+                          firstReindented = indent bodyCol <> first
+                          restReindented = rest # map (\l -> 
+                            if String.trim l == "" then "" 
+                            else indent bodyCol <> String.drop minIndent l
+                          )
+                        in String.joinWith "\n" (Array.cons firstReindented restReindented)
+                  in
+                    "const\n" <> reindented
+                else
+                  "const " <> printExpr lambda.body
             in
               [ LintWarning
                   { ruleId: RuleId "UseConst"
@@ -41,27 +76,16 @@ useConstRule = mkRule (RuleId "UseConst") run
                   , range: rangeOf expr
                   , severity: Hint
                   , suggestion: Just $ Suggestion
-                      { replacement: ReplacementText ("const " <> bodyText)
-                      , description: SuggestionDescription "\\x -> y (where y doesn't use x) can be simplified to const y"
+                      { replacement: ReplacementText replacement
+                      , description: SuggestionDescription "\\_ -> y can be simplified to const y"
                       }
                   }
               ]
-          else []
         _ -> []
     _ -> []
 
-  -- Simple check if variable name appears in expression
-  mentionsVar :: String -> Expr Void -> Boolean
-  mentionsVar name (ExprIdent (QualifiedName { name: Ident n })) = n == name
-  mentionsVar name (ExprApp fn args) = 
-    mentionsVar name fn || Array.any (mentionsVarInSpine name) (NEA.toArray args)
-  mentionsVar name (ExprLambda l) = mentionsVar name l.body
-  mentionsVar name (ExprIf i) = mentionsVar name i.cond || mentionsVar name i.true || mentionsVar name i.false
-  mentionsVar name (ExprOp lhs ops) = 
-    mentionsVar name lhs || Array.any (\(Tuple _ e) -> mentionsVar name e) (NEA.toArray ops)
-  mentionsVar name (ExprParens (Wrapped { value })) = mentionsVar name value
-  mentionsVar _ _ = false
-
-  mentionsVarInSpine :: String -> AppSpine Expr Void -> Boolean
-  mentionsVarInSpine name (AppTerm e) = mentionsVar name e
-  mentionsVarInSpine _ _ = false
+  -- Get the number of leading spaces in a string
+  getIndent :: String -> Int
+  getIndent s = 
+    let loop i = if String.take 1 (String.drop i s) == " " then loop (i + 1) else i
+    in loop 0

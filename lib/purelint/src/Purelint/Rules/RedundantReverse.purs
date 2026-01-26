@@ -25,37 +25,32 @@ redundantReverseRule = mkRule (RuleId "RedundantReverse") run
 
   checkExpr :: ImportInfo -> Expr Void -> Array LintWarning
   checkExpr imports expr = case expr of
-    -- Match: reverse (reverse x)
     ExprApp fn args
-      | isReverse imports fn ->
-        case NEA.toArray args of
-          [AppTerm arg] ->
-            case unwrapParens arg of
-              ExprApp innerFn innerArgs
-                | isReverse imports innerFn ->
-                  case NEA.toArray innerArgs of
-                    [AppTerm innerArg] ->
-                      let x = printExpr innerArg
-                      in
-                        [ LintWarning
-                            { ruleId: RuleId "RedundantReverse"
-                            , message: WarningMessage "reverse (reverse x) is redundant"
-                            , range: rangeOf expr
-                            , severity: Warning
-                            , suggestion: Just $ Suggestion
-                                { replacement: ReplacementText x
-                                , description: SuggestionDescription "Remove redundant double reverse"
-                                }
-                            }
-                        ]
-                    _ -> []
-              _ -> []
-          _ -> []
+      | isReverse imports fn
+      , [ AppTerm arg ] <- NEA.toArray args
+      , ExprApp innerFn innerArgs <- unwrapParens arg
+      , isReverse imports innerFn
+      , [ AppTerm innerArg ] <- NEA.toArray innerArgs ->
+          let
+            x = printExpr innerArg
+          in
+            [ LintWarning
+                { ruleId: RuleId "RedundantReverse"
+                , message: WarningMessage "reverse (reverse x) is redundant"
+                , range: rangeOf expr
+                , severity: Warning
+                , suggestion: Just $ Suggestion
+                    { replacement: ReplacementText x
+                    , description: SuggestionDescription "Remove redundant double reverse"
+                    }
+                }
+            ]
     _ -> []
 
   unwrapParens :: Expr Void -> Expr Void
-  unwrapParens (ExprParens (Wrapped { value })) = unwrapParens value
-  unwrapParens e = e
+  unwrapParens = case _ of
+    (ExprParens (Wrapped { value })) -> unwrapParens value
+    e -> e
 
   isReverse :: ImportInfo -> Expr Void -> Boolean
   isReverse imports (ExprIdent (QualifiedName { name: Ident name })) =

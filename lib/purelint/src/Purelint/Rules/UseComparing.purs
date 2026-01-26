@@ -28,10 +28,10 @@ useComparingRule = mkRule (RuleId "UseComparing") run
     -- Match: \x y -> compare (f x) (f y)
     ExprLambda { binders, body }
       | hasValue imports "compare" ->
-        case NEA.toArray binders of
-          [BinderVar (Name { name: Ident x }), BinderVar (Name { name: Ident y })] ->
-            checkCompareBody imports expr x y (unwrapParens body)
-          _ -> []
+          case NEA.toArray binders of
+            [ BinderVar (Name { name: Ident x }), BinderVar (Name { name: Ident y }) ] ->
+              checkCompareBody imports expr x y (unwrapParens body)
+            _ -> []
     _ -> []
 
   unwrapParens :: Expr Void -> Expr Void
@@ -42,36 +42,33 @@ useComparingRule = mkRule (RuleId "UseComparing") run
   checkCompareBody imports fullExpr x y body =
     case body of
       ExprApp fnExpr args
-        | isCompare imports fnExpr ->
-          case NEA.toArray args of
-            [AppTerm fxExpr, AppTerm fyExpr] ->
-              case extractFunctionCall (unwrapParens fxExpr), extractFunctionCall (unwrapParens fyExpr) of
-                Just { fn: f1, arg: arg1 }, Just { fn: f2, arg: arg2 }
-                  | f1 == f2 && arg1 == x && arg2 == y ->
-                    [ LintWarning
-                        { ruleId: RuleId "UseComparing"
-                        , message: WarningMessage "\\x y -> compare (f x) (f y) can be simplified to comparing f"
-                        , range: rangeOf fullExpr
-                        , severity: Hint
-                        , suggestion: Just $ Suggestion
-                            { replacement: ReplacementText ("comparing " <> f1)
-                            , description: SuggestionDescription "Use comparing instead of lambda with compare"
-                            }
-                        }
-                    ]
-                _, _ -> []
-            _ -> []
+        | isCompare imports fnExpr
+        , [ AppTerm fxExpr, AppTerm fyExpr ] <- NEA.toArray args
+        , Just { fn: f1, arg: arg1 } <- extractFunctionCall (unwrapParens fxExpr)
+        , Just { fn: f2, arg: arg2 } <- extractFunctionCall (unwrapParens fyExpr)
+        , f1 == f2 && arg1 == x && arg2 == y ->
+            [ LintWarning
+                { ruleId: RuleId "UseComparing"
+                , message: WarningMessage "\\x y -> compare (f x) (f y) can be simplified to comparing f"
+                , range: rangeOf fullExpr
+                , severity: Hint
+                , suggestion: Just $ Suggestion
+                    { replacement: ReplacementText ("comparing " <> f1)
+                    , description: SuggestionDescription "Use comparing instead of lambda with compare"
+                    }
+                }
+            ]
       _ -> []
 
   isCompare :: ImportInfo -> Expr Void -> Boolean
-  isCompare imports (ExprIdent (QualifiedName { name: Ident name })) =
-    name == "compare" && hasValue imports "compare"
-  isCompare _ _ = false
+  isCompare = case _, _ of
+    imports, ExprIdent (QualifiedName { name: Ident name }) -> name == "compare" && hasValue imports "compare"
+    _, _ -> false
 
   extractFunctionCall :: Expr Void -> Maybe { fn :: String, arg :: String }
   extractFunctionCall (ExprApp fnExpr args) =
     case fnExpr, NEA.toArray args of
-      ExprIdent (QualifiedName { name: Ident fn }), [AppTerm argExpr] ->
+      ExprIdent (QualifiedName { name: Ident fn }), [ AppTerm argExpr ] ->
         case argExpr of
           ExprIdent (QualifiedName { name: Ident arg }) -> Just { fn, arg }
           _ -> Nothing
