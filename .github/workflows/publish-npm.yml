@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: purescript-contrib/setup-purescript@v1
+      - uses: purescript-contrib/setup-purescript@v2
         with:
           purescript: "0.15.15"
 
