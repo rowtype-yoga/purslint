@@ -4,8 +4,8 @@
   "description": "A linter for PureScript",
   "type": "module",
   "bin": {
-    "purelint": "./dist/purelint.js",
-    "purelint-lsp": "./dist/purelint-lsp.js"
+    "purelint": "./bin/purelint.js",
+    "purelint-lsp": "./bin/purelint-lsp.js"
   },
   "scripts": {
     "build:cli": "spago build -p purelint-cli --output output-cli",
@@ -32,6 +32,12 @@
   "bugs": {
     "url": "https://github.com/rowtype-yoga/purslint/issues"
   },
+  "files": [
+    "bin",
+    "dist",
+    "README.md",
+    "package.json"
+  ],
   "license": "MIT",
   "dependencies": {
     "spago": "^0.93.45"

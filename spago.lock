@@ -2,7 +2,7 @@
   "workspace": {
     "packages": {
       "purelint": {
-        "path": "lib/purelint",
+        "path": "lib/purslint",
         "core": {
           "dependencies": [
             "arrays",
@@ -70,7 +70,7 @@
         }
       },
       "purelint-cli": {
-        "path": "bin/purelint-cli",
+        "path": "bin/purslint-cli",
         "core": {
           "dependencies": [
             "arrays",
@@ -157,7 +157,7 @@
         }
       },
       "purelint-lsp": {
-        "path": "bin/purelint-lsp",
+        "path": "bin/purslint-lsp",
         "core": {
           "dependencies": [
             "arrays",

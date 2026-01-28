@@ -6,7 +6,7 @@ A PureScript linter inspired by [hlint](https://github.com/ndmitchell/hlint), pr
 
 PureLint currently ships with **81 lint rules**, covering common PureScript refactors and simplifications.
 
-For a complete list, see `lib/purelint/src/Purelint/Rules/`.
+For a complete list, see `lib/purslint/src/Purelint/Rules/`.
 
 ## Installation
 
@@ -33,13 +33,13 @@ purelint --help
 spago install
 
 # Build CLI
-purs compile --codegen corefn 'lib/**/*.purs' 'bin/purelint-cli/**/*.purs' '.spago/**/*.purs'
+purs compile --codegen corefn 'lib/**/*.purs' 'bin/purslint-cli/**/*.purs' '.spago/**/*.purs'
 psgo output/*/corefn.json
 cp output/Main/Main.go main_cli.go
 go build -o purelint main_cli.go
 
 # Build LSP
-purs compile --codegen corefn 'lib/**/*.purs' 'bin/purelint-lsp/**/*.purs' '.spago/**/*.purs'
+purs compile --codegen corefn 'lib/**/*.purs' 'bin/purslint-lsp/**/*.purs' '.spago/**/*.purs'
 psgo output/*/corefn.json
 cp output/Main/Main.go main_lsp.go
 go build -o purelint-lsp main_lsp.go
@@ -126,15 +126,15 @@ PureLint is written in PureScript and compiled to Go using `psgo` (purescript-na
 
 ```
 purelint/
-├── lib/purelint/src/       # Core library
+├── lib/purslint/src/       # Core library
 │   └── Purelint/
 │       ├── Rules/          # Lint rules
 │       ├── Runner.purs     # Rule runner
 │       ├── Types.purs      # Core types
 │       └── Imports.purs    # Import checking
 ├── bin/
-│   ├── purelint-cli/       # CLI application
-│   └── purelint-lsp/       # LSP server
+│   ├── purslint-cli/       # CLI application
+│   └── purslint-lsp/       # LSP server
 ├── test/                   # Test suite
 └── zed-extension/          # Zed editor extension
 ```
@@ -143,7 +143,7 @@ purelint/
 
 ### Adding a New Rule
 
-1. Create a new file in `lib/purelint/src/Purelint/Rules/`
+1. Create a new file in `lib/purslint/src/Purelint/Rules/`
 2. Implement the rule using the CST traversal API
 3. Export the rule from `Purelint.Rules`
 4. Add tests in `test/Test/Main.purs`

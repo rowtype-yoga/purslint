@@ -96,11 +96,11 @@ All rules that check for specific identifiers:
 
 ## Files to Modify
 
-1. `lib/purelint/src/Purelint/Rule.purs` - Add RuleContext
-2. `lib/purelint/src/Purelint/Runner.purs` - Pass context to rules
-3. `lib/purelint/src/Purelint/Rules/*.purs` - All 9 rule files
-4. `bin/purelint-cli/src/Main.purs` - No changes needed (uses Runner)
-5. `bin/purelint-lsp/src/LSP.purs` - No changes needed (uses Runner)
+1. `lib/purslint/src/Purelint/Rule.purs` - Add RuleContext
+2. `lib/purslint/src/Purelint/Runner.purs` - Pass context to rules
+3. `lib/purslint/src/Purelint/Rules/*.purs` - All 9 rule files
+4. `bin/purslint-cli/src/Main.purs` - No changes needed (uses Runner)
+5. `bin/purslint-lsp/src/LSP.purs` - No changes needed (uses Runner)
 
 ## Testing
 
