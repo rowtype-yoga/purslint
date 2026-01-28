@@ -6,7 +6,7 @@ A PureScript linter inspired by [hlint](https://github.com/ndmitchell/hlint), pr
 
 PureLint currently ships with **81 lint rules**, covering common PureScript refactors and simplifications.
 
-For a complete list, see `lib/purslint/src/Purelint/Rules/`.
+For a complete list, see `lib/purslint/src/Purslint/Rules/`.
 
 ## Installation
 
@@ -127,7 +127,7 @@ PureLint is written in PureScript and compiled to Go using `psgo` (purescript-na
 ```
 purelint/
 ├── lib/purslint/src/       # Core library
-│   └── Purelint/
+│   └── Purslint/
 │       ├── Rules/          # Lint rules
 │       ├── Runner.purs     # Rule runner
 │       ├── Types.purs      # Core types
@@ -143,9 +143,9 @@ purelint/
 
 ### Adding a New Rule
 
-1. Create a new file in `lib/purslint/src/Purelint/Rules/`
+1. Create a new file in `lib/purslint/src/Purslint/Rules/`
 2. Implement the rule using the CST traversal API
-3. Export the rule from `Purelint.Rules`
+3. Export the rule from `Purslint.Rules`
 4. Add tests in `test/Test/Main.purs`
 5. Rebuild and test
 

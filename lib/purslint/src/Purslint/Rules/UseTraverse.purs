@@ -1,0 +1,138 @@
+module Purslint.Rules.UseTraverse where
+
+import Prelude
+
+import Data.Array as Array
+import Data.Array.NonEmpty as NEA
+import Data.Maybe (Maybe(..))
+import Data.Tuple (Tuple(..))
+import Purslint.Imports (ImportInfo, hasValue, hasOp)
+import Purslint.Print (printExpr)
+import Purslint.Rule (Rule, RuleContext, mkRule)
+import Purslint.Types (LintWarning(..), RuleId(..), Severity(..), Suggestion(..), SuggestionDescription(..), ReplacementText(..), WarningMessage(..))
+import PureScript.CST.Range (rangeOf)
+import PureScript.CST.Traversal (defaultMonoidalVisitor, foldMapModule)
+import PureScript.CST.Types (AppSpine(..), Expr(..), Ident(..), Module, Operator(..), QualifiedName(..), Wrapped(..))
+import Data.Void (Void)
+
+-- | Rule: sequenceA (map f x) -> traverse f x
+-- | Also handles: sequence (map f x) -> mapM f x (for Monads)
+useTraverseRule :: Rule
+useTraverseRule = mkRule (RuleId "UseTraverse") run
+  where
+  run :: RuleContext -> Module Void -> Array LintWarning
+  run ctx = foldMapModule visitor
+    where
+    imports = ctx.imports
+    visitor = defaultMonoidalVisitor { onExpr = checkExpr imports }
+
+  checkExpr :: ImportInfo -> Expr Void -> Array LintWarning
+  checkExpr imports expr = case expr of
+    -- Match: sequenceA (map f x) or sequenceA (f <$> x)
+    ExprApp (ExprIdent qn) args
+      | isSequenceA imports qn || isSequence imports qn
+      , AppTerm innerExpr <- NEA.head args ->
+          checkInnerArg imports expr qn (unwrapParens innerExpr)
+    _ -> []
+
+  -- | Unwrap parentheses to get the inner expression
+  unwrapParens :: Expr Void -> Expr Void
+  unwrapParens (ExprParens (Wrapped { value })) = unwrapParens value
+  unwrapParens e = e
+
+  checkInnerArg :: ImportInfo -> Expr Void -> QualifiedName Ident -> Expr Void -> Array LintWarning
+  checkInnerArg imports fullExpr seqQn innerExpr = 
+    case innerExpr of
+      -- Match: map f x
+      ExprApp mapFn mapArgs
+        | isMapLikeApp imports mapFn
+        , [AppTerm fExpr, AppTerm xExpr] <- NEA.toArray mapArgs ->
+            mkWarning fullExpr seqQn (printExpr fExpr) (printExpr xExpr)
+      ExprApp mapFn _
+        | isMapLikeApp imports mapFn ->
+            mkWarningTemplate fullExpr seqQn
+      -- Match: f <$> x (operator form)
+      ExprOp lhs ops
+        | hasMapOperator imports ops
+        , [Tuple _ rhs] <- NEA.toArray ops ->
+            mkWarning fullExpr seqQn (printExpr lhs) (printExpr rhs)
+      ExprOp _ ops
+        | hasMapOperator imports ops ->
+            mkWarningTemplate fullExpr seqQn
+      _ -> []
+
+  mkWarning :: Expr Void -> QualifiedName Ident -> String -> String -> Array LintWarning
+  mkWarning fullExpr seqQn fText xText =
+    let 
+      range = rangeOf fullExpr
+      seqName = getIdentName seqQn
+      replacement = if seqName == "sequenceA" || seqName == "sequenceA_" then "traverse" else "mapM"
+      replacementSuffix = if seqName == "sequenceA_" || seqName == "sequence_" then "_" else ""
+      concreteReplacement = replacement <> replacementSuffix <> " " <> fText <> " " <> xText
+      moduleName = if replacement == "mapM" then "Control.Monad" else "Data.Traversable"
+      importItem = replacement <> replacementSuffix
+    in
+      [ LintWarning
+          { ruleId: RuleId "UseTraverse"
+          , message: WarningMessage $ "Use " <> replacement <> replacementSuffix <> " instead of " <> seqName <> " composed with map / <$>"
+          , range
+          , severity: Warning
+          , suggestion: Just $ Suggestion
+              { replacement: ReplacementText concreteReplacement
+              , description: SuggestionDescription $ seqName <> " (map f x) can be replaced with " <> replacement <> replacementSuffix <> " f x"
+              , requiredImports:
+                  if replacement == "mapM" then []
+                  else
+                    [ { moduleName
+                      , importItem: Just importItem
+                      , codeText: Just importItem
+                      , qualifier: Nothing
+                      }
+                    ]
+              }
+          }
+      ]
+
+  mkWarningTemplate :: Expr Void -> QualifiedName Ident -> Array LintWarning
+  mkWarningTemplate fullExpr seqQn =
+    let 
+      range = rangeOf fullExpr
+      seqName = getIdentName seqQn
+      replacement = if seqName == "sequenceA" || seqName == "sequenceA_" then "traverse" else "mapM"
+      replacementSuffix = if seqName == "sequenceA_" || seqName == "sequence_" then "_" else ""
+    in
+      [ LintWarning
+          { ruleId: RuleId "UseTraverse"
+          , message: WarningMessage $ "Use " <> replacement <> replacementSuffix <> " instead of " <> seqName <> " composed with map / <$>"
+          , range
+          , severity: Warning
+          , suggestion: Nothing  -- No auto-fix for complex patterns
+          }
+      ]
+
+  isMapLikeApp :: ImportInfo -> Expr Void -> Boolean
+  isMapLikeApp imports (ExprIdent qn) = isMapLike imports qn
+  isMapLikeApp _ _ = false
+
+  isMapLike :: ImportInfo -> QualifiedName Ident -> Boolean
+  isMapLike imports (QualifiedName { name: Ident name }) = 
+    (name == "map" && hasValue imports "map") || (name == "fmap" && hasValue imports "fmap")
+
+  hasMapOperator :: ImportInfo -> _ -> Boolean
+  hasMapOperator imports ops = NEA.any (isMapOp imports) ops
+    where
+    isMapOp :: ImportInfo -> Tuple (QualifiedName Operator) (Expr Void) -> Boolean
+    isMapOp imps (Tuple (QualifiedName { name: Operator opName }) _) = 
+      (opName == "<$>" || opName == "<&>") && hasOp imps "<$>"
+
+  isSequenceA :: ImportInfo -> QualifiedName Ident -> Boolean
+  isSequenceA imports (QualifiedName { name: Ident name }) = 
+    (name == "sequenceA" || name == "sequenceA_") && hasValue imports "sequenceA"
+
+  isSequence :: ImportInfo -> QualifiedName Ident -> Boolean
+  isSequence imports (QualifiedName { name: Ident name }) = 
+    (name == "sequence" || name == "sequence_") && hasValue imports "sequence"
+
+  getIdentName :: QualifiedName Ident -> String
+  getIdentName (QualifiedName { name: Ident name }) = name
+

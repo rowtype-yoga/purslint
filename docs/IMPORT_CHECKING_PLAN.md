@@ -6,7 +6,7 @@ Make lint rules safer by verifying that identifiers like `map`, `identity`, `<$>
 
 ## Current State
 
-- `Purelint.Imports` module exists with:
+- `Purslint.Imports` module exists with:
   - `getImportInfo :: Module Void -> ImportInfo` - extracts import info from a module
   - `hasValue :: ImportInfo -> String -> Boolean` - check if a value is imported
   - `hasOp :: ImportInfo -> String -> Boolean` - check if an operator is imported
@@ -18,7 +18,7 @@ Make lint rules safer by verifying that identifiers like `map`, `identity`, `<$>
 ### Step 1: Update Rule type to receive ImportInfo
 
 ```purescript
--- In Purelint/Rule.purs
+-- In Purslint/Rule.purs
 type RuleContext =
   { imports :: ImportInfo
   }
@@ -34,7 +34,7 @@ mkRule :: RuleId -> (RuleContext -> Module Void -> Array LintWarning) -> Rule
 ### Step 2: Update Runner to pass context
 
 ```purescript
--- In Purelint/Runner.purs
+-- In Purslint/Runner.purs
 runRules :: Array Rule -> SourceCode -> Either String LintResult
 runRules rules (SourceCode source) = do
   mod <- parseModule source
@@ -96,9 +96,9 @@ All rules that check for specific identifiers:
 
 ## Files to Modify
 
-1. `lib/purslint/src/Purelint/Rule.purs` - Add RuleContext
-2. `lib/purslint/src/Purelint/Runner.purs` - Pass context to rules
-3. `lib/purslint/src/Purelint/Rules/*.purs` - All 9 rule files
+1. `lib/purslint/src/Purslint/Rule.purs` - Add RuleContext
+2. `lib/purslint/src/Purslint/Runner.purs` - Pass context to rules
+3. `lib/purslint/src/Purslint/Rules/*.purs` - All 9 rule files
 4. `bin/purslint-cli/src/Main.purs` - No changes needed (uses Runner)
 5. `bin/purslint-lsp/src/LSP.purs` - No changes needed (uses Runner)
 

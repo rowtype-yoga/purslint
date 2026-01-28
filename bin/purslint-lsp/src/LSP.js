@@ -1,4 +1,4 @@
-// Purelint.LSP FFI for JavaScript
+// Purslint.LSP FFI for JavaScript
 
 // Create a null value
 export const mkNull = (_) => null;
