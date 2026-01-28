@@ -43,6 +43,7 @@
     "spago": "^0.93.45"
   },
   "devDependencies": {
+    "esbuild": "^0.27.2",
     "purs-backend-es": "^1.4.3"
   }
 }
