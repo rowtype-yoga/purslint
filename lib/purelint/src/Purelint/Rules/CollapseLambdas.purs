@@ -43,6 +43,7 @@ collapseLambdasRule = run # mkRule (RuleId "CollapseLambdas")
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText replacement
                   , description: SuggestionDescription "\\x -> \\y -> body can be simplified to \\x y -> body"
+                    , requiredImports: []
                   }
               }
           ]
@@ -52,3 +53,4 @@ collapseLambdasRule = run # mkRule (RuleId "CollapseLambdas")
   getBinderName :: Binder Void -> Maybe String
   getBinderName (BinderVar (Name { name: Ident n })) = Just n
   getBinderName _ = Nothing
+

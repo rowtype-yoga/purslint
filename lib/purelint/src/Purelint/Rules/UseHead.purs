@@ -39,6 +39,7 @@ useHeadRule = mkRule (RuleId "UseHead") run
                   , suggestion: Just $ Suggestion
                       { replacement: ReplacementText "head"
                       , description: SuggestionDescription "Use head instead of !! 0"
+                        , requiredImports: []
                       }
                   }
               ]
@@ -54,3 +55,4 @@ useHeadRule = mkRule (RuleId "UseHead") run
   isZeroLiteral (ExprInt _ (SmallInt 0)) = true
   isZeroLiteral (ExprInt _ (BigInt s)) = s == "0"
   isZeroLiteral _ = false
+

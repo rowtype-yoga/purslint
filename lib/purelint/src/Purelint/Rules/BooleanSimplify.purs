@@ -73,6 +73,7 @@ booleanSimplifyRule = run # mkRule (RuleId "BooleanSimplify")
       , suggestion: Just $ Suggestion
           { replacement: ReplacementText replacement
           , description: SuggestionDescription $ from <> " can be simplified to " <> to
+            , requiredImports: []
           }
       }
 
@@ -82,3 +83,4 @@ booleanSimplifyRule = run # mkRule (RuleId "BooleanSimplify")
   isBoolLit :: Boolean -> Expr Void -> Boolean
   isBoolLit expected (ExprBoolean _ val) = val == expected
   isBoolLit _ _ = false
+

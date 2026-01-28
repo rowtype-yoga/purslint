@@ -52,6 +52,7 @@ useBindFlipRule = mkRule (RuleId "UseBindFlip") run
                 , suggestion: Just $ Suggestion
                     { replacement: ReplacementText (x <> " >>= " <> f)
                     , description: SuggestionDescription "Use >>= instead of join composed with map"
+                      , requiredImports: []
                     }
                 }
             ]
@@ -66,3 +67,4 @@ useBindFlipRule = mkRule (RuleId "UseBindFlip") run
   isMap = case _, _ of
     imports, ExprIdent (QualifiedName { name: Ident name }) -> name == "map" && hasValue imports "map"
     _, _ -> false
+

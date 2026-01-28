@@ -46,6 +46,7 @@ alternativeLawRule = mkRule (RuleId "AlternativeLaw") run
             , suggestion: Just $ Suggestion
                 { replacement: ReplacementText (printExpr rhs)
                 , description: SuggestionDescription "empty is the identity for <|> (left identity)"
+                  , requiredImports: []
                 }
             }
         ]
@@ -59,6 +60,7 @@ alternativeLawRule = mkRule (RuleId "AlternativeLaw") run
             , suggestion: Just $ Suggestion
                 { replacement: ReplacementText (printExpr lhs)
                 , description: SuggestionDescription "empty is the identity for <|> (right identity)"
+                  , requiredImports: []
                 }
             }
         ]
@@ -72,3 +74,4 @@ alternativeLawRule = mkRule (RuleId "AlternativeLaw") run
     hasValue imports "Nothing"
   isEmpty _ (ExprArray (Wrapped { value: Nothing })) = true -- []
   isEmpty _ _ = false
+

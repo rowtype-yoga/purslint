@@ -56,6 +56,13 @@ useFindMapRule = mkRule (RuleId "UseFindMap") run
                   , suggestion: Just $ Suggestion
                       { replacement: ReplacementText ("findMap " <> f <> " " <> x)
                       , description: SuggestionDescription "Use findMap instead of head composed with mapMaybe"
+                      , requiredImports:
+                          [ { moduleName: "Data.Array"
+                            , importItem: Just "findMap"
+                            , codeText: Just "findMap"
+                            , qualifier: Nothing
+                            }
+                          ]
                       }
                   }
               ]
@@ -71,3 +78,4 @@ useFindMapRule = mkRule (RuleId "UseFindMap") run
   isMapMaybe imports (ExprIdent (QualifiedName { name: Ident name })) =
     name == "mapMaybe" && hasValue imports "mapMaybe"
   isMapMaybe _ _ = false
+

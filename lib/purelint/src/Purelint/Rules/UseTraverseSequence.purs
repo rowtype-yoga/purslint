@@ -42,6 +42,13 @@ useTraverseSequenceRule = mkRule (RuleId "UseTraverseSequence") run
                     , suggestion: Just $ Suggestion
                         { replacement: ReplacementText ("traverse " <> fText <> " " <> xText)
                         , description: SuggestionDescription "Use traverse instead of sequence (map ...)"
+                        , requiredImports:
+                            [ { moduleName: "Data.Traversable"
+                              , importItem: Just "traverse"
+                              , codeText: Just "traverse"
+                              , qualifier: Nothing
+                              }
+                            ]
                         }
                     }
                 ]
@@ -64,3 +71,4 @@ useTraverseSequenceRule = mkRule (RuleId "UseTraverseSequence") run
       _ -> Nothing
   getMapArgs imports (ExprParens (Wrapped { value })) = getMapArgs imports value
   getMapArgs _ _ = Nothing
+

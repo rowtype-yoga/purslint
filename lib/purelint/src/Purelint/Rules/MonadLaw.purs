@@ -52,6 +52,7 @@ monadLawRule = mkRule (RuleId "MonadLaw") run
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText replacement
                   , description: SuggestionDescription "Apply f directly to a (left identity)"
+                    , requiredImports: []
                   }
               }
           ]
@@ -66,6 +67,7 @@ monadLawRule = mkRule (RuleId "MonadLaw") run
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText (printExpr m)
                   , description: SuggestionDescription "pure =<< m is just m (right identity)"
+                    , requiredImports: []
                   }
               }
           ]
@@ -95,3 +97,4 @@ monadLawRule = mkRule (RuleId "MonadLaw") run
     ExprRecord _ -> printExpr e
     ExprParens _ -> printExpr e
     _ -> "(" <> printExpr e <> ")"
+

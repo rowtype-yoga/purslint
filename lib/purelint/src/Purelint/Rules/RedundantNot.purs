@@ -41,6 +41,7 @@ redundantNotRule = mkRule (RuleId "RedundantNot") run
                     , suggestion: Just $ Suggestion
                         { replacement: ReplacementText xText
                         , description: SuggestionDescription "not (not x) can be simplified to x"
+                          , requiredImports: []
                         }
                     }
                 ]
@@ -60,3 +61,4 @@ redundantNotRule = mkRule (RuleId "RedundantNot") run
       _ -> Nothing
   getNotArg imports (ExprParens (Wrapped { value })) = getNotArg imports value
   getNotArg _ _ = Nothing
+

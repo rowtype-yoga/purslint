@@ -72,6 +72,7 @@ usePatternGuardsRule = mkRule (RuleId "UsePatternGuards") run
                         , suggestion: Just $ Suggestion
                             { replacement: ReplacementText replacement
                             , description: SuggestionDescription $ "Use pattern guards instead of " <> show result.depth <> " nested case expressions"
+                              , requiredImports: []
                             }
                         }
                     ]
@@ -227,3 +228,4 @@ usePatternGuardsRule = mkRule (RuleId "UsePatternGuards") run
           _ -> Nothing
       _ -> Nothing
   getMatchPatternAndBody _ = Nothing
+

@@ -39,6 +39,7 @@ useAndRule = mkRule (RuleId "UseAnd") run
                   , suggestion: Just $ Suggestion
                       { replacement: ReplacementText "and"
                       , description: SuggestionDescription "Use and instead of all identity"
+                        , requiredImports: []
                       }
                   }
               ]
@@ -55,6 +56,7 @@ useAndRule = mkRule (RuleId "UseAnd") run
                     , suggestion: Just $ Suggestion
                         { replacement: ReplacementText ("and " <> x)
                         , description: SuggestionDescription "Use and instead of all identity"
+                          , requiredImports: []
                         }
                     }
                 ]
@@ -75,3 +77,4 @@ useAndRule = mkRule (RuleId "UseAnd") run
   isIdentity imports (ExprIdent (QualifiedName { name: Ident name })) =
     (name == "identity" || name == "id") && hasValue imports "identity"
   isIdentity _ _ = false
+

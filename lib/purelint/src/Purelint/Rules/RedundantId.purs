@@ -43,6 +43,7 @@ redundantIdRule = mkRule (RuleId "RedundantId") run
                   , suggestion: Just $ Suggestion
                       { replacement: ReplacementText x
                       , description: SuggestionDescription "Remove redundant identity application"
+                        , requiredImports: []
                       }
                   }
               ]
@@ -63,6 +64,7 @@ redundantIdRule = mkRule (RuleId "RedundantId") run
                     , suggestion: Just $ Suggestion
                         { replacement: ReplacementText x
                         , description: SuggestionDescription "Remove redundant identity composition"
+                          , requiredImports: []
                         }
                     }
                 ]
@@ -77,6 +79,7 @@ redundantIdRule = mkRule (RuleId "RedundantId") run
                     , suggestion: Just $ Suggestion
                         { replacement: ReplacementText x
                         , description: SuggestionDescription "Remove redundant identity composition"
+                          , requiredImports: []
                         }
                     }
                 ]
@@ -93,6 +96,7 @@ redundantIdRule = mkRule (RuleId "RedundantId") run
                     , suggestion: Just $ Suggestion
                         { replacement: ReplacementText x
                         , description: SuggestionDescription "Remove redundant identity composition"
+                          , requiredImports: []
                         }
                     }
                 ]
@@ -107,6 +111,7 @@ redundantIdRule = mkRule (RuleId "RedundantId") run
                     , suggestion: Just $ Suggestion
                         { replacement: ReplacementText x
                         , description: SuggestionDescription "Remove redundant identity composition"
+                          , requiredImports: []
                         }
                     }
                 ]
@@ -122,3 +127,4 @@ redundantIdRule = mkRule (RuleId "RedundantId") run
   isIdentity imports (ExprIdent (QualifiedName { name: Ident name })) =
     (name == "identity" || name == "id") && hasValue imports "identity"
   isIdentity _ _ = false
+

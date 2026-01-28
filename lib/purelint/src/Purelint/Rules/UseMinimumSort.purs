@@ -50,6 +50,7 @@ useMinimumSortRule = mkRule (RuleId "UseMinimumSort") run
                             , suggestion: Just $ Suggestion
                                 { replacement: ReplacementText (newFn <> " " <> x)
                                 , description: SuggestionDescription $ "Use " <> newFn <> " instead of sorting"
+                                  , requiredImports: []
                                 }
                             }
                         ]
@@ -76,3 +77,4 @@ useMinimumSortRule = mkRule (RuleId "UseMinimumSort") run
   isSort imports (ExprIdent (QualifiedName { name: Ident name })) =
     name == "sort" && hasValue imports "sort"
   isSort _ _ = false
+

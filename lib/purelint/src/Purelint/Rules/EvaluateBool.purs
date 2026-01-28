@@ -83,6 +83,8 @@ evaluateBoolRule = run # mkRule (RuleId "EvaluateBool")
         , suggestion: Just $ Suggestion
             { replacement: ReplacementText replacement
             , description: SuggestionDescription $ "Simplifies to " <> desc
+              , requiredImports: []
             }
         }
     ]
+

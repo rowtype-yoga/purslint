@@ -41,6 +41,7 @@ redundantIfRule = mkRule (RuleId "RedundantIf") run
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText (printExpr condExpr)
                   , description: SuggestionDescription "if a then true else false can be simplified to a"
+                    , requiredImports: []
                   }
               }
           ]
@@ -54,6 +55,7 @@ redundantIfRule = mkRule (RuleId "RedundantIf") run
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText ("not " <> printExpr condExpr)
                   , description: SuggestionDescription "if a then false else true can be simplified to not a"
+                    , requiredImports: []
                   }
               }
           ]
@@ -63,3 +65,4 @@ redundantIfRule = mkRule (RuleId "RedundantIf") run
   isBoolLit :: Boolean -> Expr Void -> Boolean
   isBoolLit expected (ExprBoolean _ val) = val == expected
   isBoolLit _ _ = false
+

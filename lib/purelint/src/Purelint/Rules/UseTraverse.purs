@@ -69,6 +69,8 @@ useTraverseRule = mkRule (RuleId "UseTraverse") run
       replacement = if seqName == "sequenceA" || seqName == "sequenceA_" then "traverse" else "mapM"
       replacementSuffix = if seqName == "sequenceA_" || seqName == "sequence_" then "_" else ""
       concreteReplacement = replacement <> replacementSuffix <> " " <> fText <> " " <> xText
+      moduleName = if replacement == "mapM" then "Control.Monad" else "Data.Traversable"
+      importItem = replacement <> replacementSuffix
     in
       [ LintWarning
           { ruleId: RuleId "UseTraverse"
@@ -78,6 +80,15 @@ useTraverseRule = mkRule (RuleId "UseTraverse") run
           , suggestion: Just $ Suggestion
               { replacement: ReplacementText concreteReplacement
               , description: SuggestionDescription $ seqName <> " (map f x) can be replaced with " <> replacement <> replacementSuffix <> " f x"
+              , requiredImports:
+                  if replacement == "mapM" then []
+                  else
+                    [ { moduleName
+                      , importItem: Just importItem
+                      , codeText: Just importItem
+                      , qualifier: Nothing
+                      }
+                    ]
               }
           }
       ]
@@ -124,3 +135,4 @@ useTraverseRule = mkRule (RuleId "UseTraverse") run
 
   getIdentName :: QualifiedName Ident -> String
   getIdentName (QualifiedName { name: Ident name }) = name
+

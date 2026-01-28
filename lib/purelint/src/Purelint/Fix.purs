@@ -11,6 +11,7 @@ import Data.String as String
 import Data.String.CodeUnits as StringCU
 import PureScript.CST.Types (SourceRange)
 import Purelint.Types (LintResult(..), LintWarning(..), ReplacementText(..), Suggestion(..))
+import Purelint.ImportFix (processImports)
 
 -- | Extract text at a source range from source code
 extractRange :: String -> SourceRange -> String
@@ -70,7 +71,10 @@ applyFix :: String -> LintWarning -> Maybe String
 applyFix source (LintWarning w) = do
   Suggestion s <- w.suggestion
   let replacement = s.replacement # un ReplacementText
-  Just $ replaceRange source w.range replacement
+  let { source: updatedSource, replacement: updatedReplacement, linesAdded } =
+        processImports source replacement s.requiredImports
+  let shiftedRange = shiftRange linesAdded w.range
+  Just $ replaceRange updatedSource shiftedRange updatedReplacement
 
 -- | Apply all fixes to source code (in reverse order to preserve ranges)
 -- | Skips overlapping fixes to avoid corruption
@@ -98,8 +102,11 @@ applyAllFixes source (LintResult result) =
       Nothing -> acc
       Just (Suggestion s) ->
         let replacement = s.replacement # un ReplacementText
-        in { source: replaceRange acc.source w.range replacement
-           , appliedRanges: Array.cons w.range acc.appliedRanges
+            importResult = processImports acc.source replacement s.requiredImports
+            shiftedRange = shiftRange importResult.linesAdded w.range
+            updatedSource = replaceRange importResult.source shiftedRange importResult.replacement
+        in { source: updatedSource
+           , appliedRanges: Array.cons shiftedRange acc.appliedRanges
            }
 
   -- Check if two ranges overlap
@@ -108,4 +115,12 @@ applyAllFixes source (LintResult result) =
     not (aEndsBeforeB || bEndsBeforeA)
     where
     aEndsBeforeB = a.end.line < b.start.line || (a.end.line == b.start.line && a.end.column <= b.start.column)
-    bEndsBeforeA = b.end.line < a.start.line || (b.end.line == a.start.line && b.end.column <= a.start.column)
+    bEndsBeforeA = b.end.line < a.start.line || (b.end.line == a.start.line && b.end.column <= b.start.column)
+
+shiftRange :: Int -> SourceRange -> SourceRange
+shiftRange lineDelta range =
+  if lineDelta == 0 then range
+  else
+    { start: range.start { line = range.start.line + lineDelta }
+    , end: range.end { line = range.end.line + lineDelta }
+    }

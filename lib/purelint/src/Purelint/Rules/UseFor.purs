@@ -51,6 +51,7 @@ useForRule = mkRule (RuleId "UseFor") run
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText "for"
                   , description: SuggestionDescription "Use for instead of flip traverse"
+                    , requiredImports: []
                   }
               }
           ]
@@ -63,6 +64,7 @@ useForRule = mkRule (RuleId "UseFor") run
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText "for_"
                   , description: SuggestionDescription "Use for_ instead of flip traverse_"
+                    , requiredImports: []
                   }
               }
           ]
@@ -72,3 +74,4 @@ useForRule = mkRule (RuleId "UseFor") run
   isFlip imports (ExprIdent (QualifiedName { name: Ident name })) =
     name == "flip" && hasValue imports "flip"
   isFlip _ _ = false
+

@@ -44,6 +44,7 @@ unlessNotRule = mkRule (RuleId "UnlessNot") run
                       , suggestion: Just $ Suggestion
                           { replacement: ReplacementText ("when " <> xText <> " " <> action)
                           , description: SuggestionDescription "Use when instead of unless (not ...)"
+                            , requiredImports: []
                           }
                       }
                   ]
@@ -61,6 +62,7 @@ unlessNotRule = mkRule (RuleId "UnlessNot") run
                       , suggestion: Just $ Suggestion
                           { replacement: ReplacementText ("when " <> xText)
                           , description: SuggestionDescription "Use when instead of unless (not ...)"
+                            , requiredImports: []
                           }
                       }
                   ]
@@ -91,3 +93,4 @@ unlessNotRule = mkRule (RuleId "UnlessNot") run
             [AppTerm arg] -> Just arg
             _ -> Nothing
       _ -> Nothing
+

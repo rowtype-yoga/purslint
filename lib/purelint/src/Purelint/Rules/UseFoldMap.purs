@@ -109,6 +109,7 @@ useFoldMapRule = mkRule (RuleId "UseFoldMap") run
             , suggestion: Just $ Suggestion
                 { replacement: ReplacementText suggestion
                 , description: SuggestionDescription "Use foldMap instead of case with Nothing -> mempty"
+                  , requiredImports: []
                 }
             }
         ]
@@ -163,3 +164,4 @@ useFoldMapRule = mkRule (RuleId "UseFoldMap") run
   getIndent s = 
     let loop i = if String.take 1 (String.drop i s) == " " then loop (i + 1) else i
     in loop 0
+

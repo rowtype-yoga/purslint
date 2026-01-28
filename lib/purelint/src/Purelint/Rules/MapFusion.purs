@@ -84,6 +84,7 @@ mapFusionRule = mkRule (RuleId "MapFusion") run
                   , suggestion: Just $ Suggestion
                       { replacement: ReplacementText replacement
                       , description: SuggestionDescription "x <#> g <#> f can be replaced with x <#> (g >>> f)"
+                        , requiredImports: []
                       }
                   }
               ]
@@ -120,6 +121,7 @@ mapFusionRule = mkRule (RuleId "MapFusion") run
           , suggestion: Just $ Suggestion
               { replacement: ReplacementText replacement
               , description: SuggestionDescription "Nested maps can be fused with composition"
+                , requiredImports: []
               }
           }
       ]
@@ -139,3 +141,4 @@ mapFusionRule = mkRule (RuleId "MapFusion") run
   isFlippedMapOp :: ImportInfo -> QualifiedName Operator -> Boolean
   isFlippedMapOp imports (QualifiedName { name: Operator op }) = 
     (op == "<#>" || op == "<##>") && hasOp imports "<#>"
+

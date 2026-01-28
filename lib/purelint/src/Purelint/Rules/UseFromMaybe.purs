@@ -39,6 +39,7 @@ useFromMaybeRule = mkRule (RuleId "UseFromMaybe") run
                 , suggestion: Just $ Suggestion
                     { replacement: ReplacementText ("fromMaybe " <> defaultText)
                     , description: SuggestionDescription "Use fromMaybe instead of maybe x id"
+                      , requiredImports: []
                     }
                 }
             ]
@@ -54,3 +55,4 @@ useFromMaybeRule = mkRule (RuleId "UseFromMaybe") run
   isId imports (ExprIdent (QualifiedName { name: Ident name })) =
     name == "identity" && hasValue imports "identity"
   isId _ _ = false
+

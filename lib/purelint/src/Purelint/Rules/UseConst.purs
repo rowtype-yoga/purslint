@@ -78,6 +78,7 @@ useConstRule = mkRule (RuleId "UseConst") run
                   , suggestion: Just $ Suggestion
                       { replacement: ReplacementText replacement
                       , description: SuggestionDescription "\\_ -> y can be simplified to const y"
+                        , requiredImports: []
                       }
                   }
               ]
@@ -89,3 +90,4 @@ useConstRule = mkRule (RuleId "UseConst") run
   getIndent s = 
     let loop i = if String.take 1 (String.drop i s) == " " then loop (i + 1) else i
     in loop 0
+

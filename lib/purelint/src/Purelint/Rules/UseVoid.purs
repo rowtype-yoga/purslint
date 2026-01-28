@@ -41,6 +41,7 @@ useVoidRule = mkRule (RuleId "UseVoid") run
                 , suggestion: Just $ Suggestion
                     { replacement: ReplacementText ("void " <> aText)
                     , description: SuggestionDescription "a *> pure unit can be simplified to void a"
+                      , requiredImports: []
                     }
                 }
             ]
@@ -64,3 +65,4 @@ useVoidRule = mkRule (RuleId "UseVoid") run
   isUnit :: Expr Void -> Boolean
   isUnit (ExprIdent (QualifiedName { name: Ident name })) = name == "unit"
   isUnit _ = false
+

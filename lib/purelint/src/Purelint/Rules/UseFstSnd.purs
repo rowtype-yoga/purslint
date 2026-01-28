@@ -40,6 +40,7 @@ useFstSndRule = mkRule (RuleId "UseFstSnd") run
                         , suggestion: Just $ Suggestion
                             { replacement: ReplacementText "fst"
                             , description: SuggestionDescription "Use fst instead of lambda extracting first element"
+                              , requiredImports: []
                             }
                         }
                     ]
@@ -52,6 +53,7 @@ useFstSndRule = mkRule (RuleId "UseFstSnd") run
                         , suggestion: Just $ Suggestion
                             { replacement: ReplacementText "snd"
                             , description: SuggestionDescription "Use snd instead of lambda extracting second element"
+                              , requiredImports: []
                             }
                         }
                     ]
@@ -77,3 +79,4 @@ useFstSndRule = mkRule (RuleId "UseFstSnd") run
   getBinderName (BinderWildcard _) = Nothing -- wildcards can't be referenced in body
   getBinderName (BinderParens (Wrapped { value: inner })) = getBinderName inner
   getBinderName _ = Nothing
+

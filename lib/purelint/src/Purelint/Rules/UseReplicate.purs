@@ -44,6 +44,13 @@ useReplicateRule = mkRule (RuleId "UseReplicate") run
                       , suggestion: Just $ Suggestion
                           { replacement: ReplacementText ("replicate " <> n <> " " <> xText)
                           , description: SuggestionDescription "Use replicate instead of take n (repeat x)"
+                          , requiredImports:
+                              [ { moduleName: "Data.Array"
+                                , importItem: Just "replicate"
+                                , codeText: Just "replicate"
+                                , qualifier: Nothing
+                                }
+                              ]
                           }
                       }
                   ]
@@ -74,3 +81,4 @@ useReplicateRule = mkRule (RuleId "UseReplicate") run
             [AppTerm arg] -> Just arg
             _ -> Nothing
       _ -> Nothing
+

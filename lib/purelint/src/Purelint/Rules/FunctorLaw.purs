@@ -74,6 +74,7 @@ functorLawRule = mkRule (RuleId "FunctorLaw") run
           , suggestion: Just $ Suggestion
               { replacement: ReplacementText replacement
               , description: SuggestionDescription $ style <> " f (" <> style <> " g x) can be fused to " <> style <> " (f <<< g) x"
+                , requiredImports: []
               }
           }
       ]
@@ -90,3 +91,4 @@ functorLawRule = mkRule (RuleId "FunctorLaw") run
   isMapOp :: ImportInfo -> QualifiedName Operator -> Boolean
   isMapOp imports (QualifiedName { name: Operator op }) = 
     op == "<$>" && hasOp imports "<$>"
+

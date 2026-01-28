@@ -41,6 +41,7 @@ mapIdentityRule = run # mkRule (RuleId "MapIdentity")
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText (printExpr xExpr)
                   , description: SuggestionDescription "map identity x can be simplified to x"
+                    , requiredImports: []
                   }
               }
           ]
@@ -57,6 +58,7 @@ mapIdentityRule = run # mkRule (RuleId "MapIdentity")
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText (printExpr xExpr)
                   , description: SuggestionDescription "identity <$> x can be simplified to x"
+                    , requiredImports: []
                   }
               }
           ]
@@ -73,6 +75,7 @@ mapIdentityRule = run # mkRule (RuleId "MapIdentity")
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText (printExpr lhs)
                   , description: SuggestionDescription "x <#> identity can be simplified to x"
+                    , requiredImports: []
                   }
               }
           ]
@@ -94,3 +97,4 @@ mapIdentityRule = run # mkRule (RuleId "MapIdentity")
   isIdentity imports (ExprIdent (QualifiedName { name: Ident name })) =
     (name == "identity" && hasValue imports "identity") || (name == "id" && hasValue imports "id")
   isIdentity _ _ = false
+

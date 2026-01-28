@@ -40,6 +40,7 @@ evaluateConstRule = mkRule (RuleId "EvaluateConst") run
                   , suggestion: Just $ Suggestion
                       { replacement: ReplacementText x
                       , description: SuggestionDescription "Evaluate const"
+                        , requiredImports: []
                       }
                   }
               ]
@@ -50,3 +51,4 @@ evaluateConstRule = mkRule (RuleId "EvaluateConst") run
   isConst imports (ExprIdent (QualifiedName { name: Ident name })) =
     name == "const" && hasValue imports "const"
   isConst _ _ = false
+

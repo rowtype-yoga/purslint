@@ -41,6 +41,7 @@ useAnyRule = mkRule (RuleId "UseAny") run
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText ("any " <> fText <> " " <> xText)
                   , description: SuggestionDescription "or (map f x) can be simplified to any f x"
+                    , requiredImports: []
                   }
               }
           ]
@@ -59,3 +60,4 @@ useAnyRule = mkRule (RuleId "UseAny") run
   isMapLike = case _, _ of
     imports, (ExprIdent (QualifiedName { name: Ident name })) -> name == "map" && hasValue imports "map"
     _, _ -> false
+

@@ -41,6 +41,7 @@ redundantFlipRule = mkRule (RuleId "RedundantFlip") run
                     , suggestion: Just $ Suggestion
                         { replacement: ReplacementText fText
                         , description: SuggestionDescription "flip (flip f) can be simplified to f"
+                          , requiredImports: []
                         }
                     }
                 ]
@@ -60,3 +61,4 @@ redundantFlipRule = mkRule (RuleId "RedundantFlip") run
       _ -> Nothing
   getFlipArg imports (ExprParens (Wrapped { value })) = getFlipArg imports value
   getFlipArg _ _ = Nothing
+

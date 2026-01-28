@@ -64,6 +64,7 @@ notEqualRule = mkRule (RuleId "NotEqual") run
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText replacement
                   , description: SuggestionDescription msg
+                    , requiredImports: []
                   }
               }
           ]
@@ -80,3 +81,4 @@ notEqualRule = mkRule (RuleId "NotEqual") run
 
   isNot :: ImportInfo -> QualifiedName Ident -> Boolean
   isNot imports (QualifiedName { name: Ident name }) = name == "not" && hasValue imports "not"
+

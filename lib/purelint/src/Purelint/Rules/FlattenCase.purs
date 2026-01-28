@@ -56,6 +56,7 @@ flattenCaseRule = mkRule (RuleId "FlattenCase") run
                 , suggestion: Just $ Suggestion
                     { replacement: ReplacementText replacement
                     , description: SuggestionDescription $ "Use case with " <> show depth <> " scrutinees instead of nested cases"
+                      , requiredImports: []
                     }
                 }
             ]
@@ -141,3 +142,4 @@ flattenCaseRule = mkRule (RuleId "FlattenCase") run
   formatArm :: { patterns :: Array String, body :: String } -> String
   formatArm { patterns, body } =
     String.joinWith ", " patterns <> " -> " <> body
+

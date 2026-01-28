@@ -38,6 +38,7 @@ useWhenRule = mkRule (RuleId "UseWhen") run
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText ("when " <> condText <> " " <> actionText)
                   , description: SuggestionDescription "Use when instead of if/else with pure unit"
+                    , requiredImports: []
                   }
               }
           ]
@@ -53,3 +54,4 @@ useWhenRule = mkRule (RuleId "UseWhen") run
   isPure imports (ExprIdent (QualifiedName { name: Ident name })) =
     (name == "pure" && hasValue imports "pure") || (name == "return" && hasValue imports "return")
   isPure _ _ = false
+

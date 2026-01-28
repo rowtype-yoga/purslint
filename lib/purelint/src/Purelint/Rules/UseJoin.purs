@@ -40,6 +40,7 @@ useJoinRule = mkRule (RuleId "UseJoin") run
                 , suggestion: Just $ Suggestion
                     { replacement: ReplacementText ("join " <> xText)
                     , description: SuggestionDescription "x >>= identity can be simplified to join x"
+                      , requiredImports: []
                     }
                 }
             ]
@@ -58,6 +59,7 @@ useJoinRule = mkRule (RuleId "UseJoin") run
                 , suggestion: Just $ Suggestion
                     { replacement: ReplacementText ("join " <> xText)
                     , description: SuggestionDescription "identity =<< x can be simplified to join x"
+                      , requiredImports: []
                     }
                 }
             ]
@@ -76,3 +78,4 @@ useJoinRule = mkRule (RuleId "UseJoin") run
   isIdentity imports (ExprIdent (QualifiedName { name: Ident name })) = 
     (name == "identity" && hasValue imports "identity") || (name == "id" && hasValue imports "id")
   isIdentity _ _ = false
+

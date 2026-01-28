@@ -45,6 +45,7 @@ useBreakRule = mkRule (RuleId "UseBreak") run
                         , suggestion: Just $ Suggestion
                             { replacement: ReplacementText ("break " <> pText <> " " <> x)
                             , description: SuggestionDescription "Use break instead of span with negated predicate"
+                              , requiredImports: []
                             }
                         }
                     ]
@@ -63,6 +64,7 @@ useBreakRule = mkRule (RuleId "UseBreak") run
                         , suggestion: Just $ Suggestion
                             { replacement: ReplacementText ("break " <> pText)
                             , description: SuggestionDescription "Use break instead of span with negated predicate"
+                              , requiredImports: []
                             }
                         }
                     ]
@@ -94,3 +96,4 @@ useBreakRule = mkRule (RuleId "UseBreak") run
               [ AppTerm p ] -> Just p
               _ -> Nothing
       _ -> Nothing
+

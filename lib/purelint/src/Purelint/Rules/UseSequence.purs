@@ -37,6 +37,13 @@ useSequenceRule = mkRule (RuleId "UseSequence") run
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText "sequence"
                   , description: SuggestionDescription "Use sequence instead of traverse identity"
+                  , requiredImports:
+                      [ { moduleName: "Data.Traversable"
+                        , importItem: Just "sequence"
+                        , codeText: Just "sequence"
+                        , qualifier: Nothing
+                        }
+                      ]
                   }
               }
           ]
@@ -52,3 +59,4 @@ useSequenceRule = mkRule (RuleId "UseSequence") run
   isIdentity imports (ExprIdent (QualifiedName { name: Ident name })) =
     name == "identity" && hasValue imports "identity"
   isIdentity _ _ = false
+

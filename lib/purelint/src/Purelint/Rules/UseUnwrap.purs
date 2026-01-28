@@ -40,6 +40,7 @@ useUnwrapRule = mkRule (RuleId "UseUnwrap") run
                , suggestion: Just $ Suggestion
                    { replacement: ReplacementText replacement
                    , description: SuggestionDescription "Use un with typed hole to find the right accessor"
+                     , requiredImports: []
                    }
                }
            ]
@@ -54,6 +55,7 @@ useUnwrapRule = mkRule (RuleId "UseUnwrap") run
              , suggestion: Just $ Suggestion
                  { replacement: ReplacementText "un ?Constructor"
                  , description: SuggestionDescription "Use un with typed hole to find the right accessor"
+                   , requiredImports: []
                  }
              }
          ]
@@ -65,3 +67,4 @@ useUnwrapRule = mkRule (RuleId "UseUnwrap") run
 
   isUnwrapIdent :: QualifiedName Ident -> Boolean
   isUnwrapIdent (QualifiedName { name: Ident name }) = name == "unwrap"
+

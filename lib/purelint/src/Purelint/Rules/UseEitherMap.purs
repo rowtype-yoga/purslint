@@ -45,6 +45,7 @@ useEitherMapRule = mkRule (RuleId "UseEitherMap") run
                           , suggestion: Just $ Suggestion
                               { replacement: ReplacementText ("map " <> fText)
                               , description: SuggestionDescription "Use map instead of either Left (Right <<< f)"
+                                , requiredImports: []
                               }
                           }
                       ]
@@ -67,6 +68,7 @@ useEitherMapRule = mkRule (RuleId "UseEitherMap") run
                           , suggestion: Just $ Suggestion
                               { replacement: ReplacementText ("map " <> fText <> " " <> x)
                               , description: SuggestionDescription "Use map instead of either Left (Right <<< f)"
+                                , requiredImports: []
                               }
                           }
                       ]
@@ -112,3 +114,4 @@ useEitherMapRule = mkRule (RuleId "UseEitherMap") run
             | isRight imports rhs -> Just lhs
           _ -> Nothing
       _ -> Nothing
+

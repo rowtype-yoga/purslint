@@ -45,6 +45,7 @@ useApplyFlippedRule = mkRule (RuleId "UseApplyFlipped") run
                , suggestion: Just $ Suggestion
                    { replacement: ReplacementText replacement
                    , description: SuggestionDescription ("Rewrite as: " <> replacement)
+                     , requiredImports: []
                    }
                }
            ]
@@ -53,3 +54,4 @@ useApplyFlippedRule = mkRule (RuleId "UseApplyFlipped") run
   unwrapParens :: Expr Void -> Expr Void
   unwrapParens (ExprParens (Wrapped { value })) = unwrapParens value
   unwrapParens e = e
+

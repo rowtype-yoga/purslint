@@ -48,6 +48,7 @@ useBimapRule = mkRule (RuleId "UseBimap") run
                         , suggestion: Just $ Suggestion
                             { replacement: ReplacementText ("second " <> g)
                             , description: SuggestionDescription "Use second instead of bimap id"
+                              , requiredImports: []
                             }
                         }
                     ]
@@ -63,6 +64,7 @@ useBimapRule = mkRule (RuleId "UseBimap") run
                         , suggestion: Just $ Suggestion
                             { replacement: ReplacementText ("first " <> f)
                             , description: SuggestionDescription "Use first instead of bimap f id"
+                              , requiredImports: []
                             }
                         }
                     ]
@@ -75,6 +77,7 @@ useBimapRule = mkRule (RuleId "UseBimap") run
                       , suggestion: Just $ Suggestion
                           { replacement: ReplacementText "identity"
                           , description: SuggestionDescription "bimap id id is just identity"
+                            , requiredImports: []
                           }
                       }
                   ]
@@ -97,6 +100,7 @@ useBimapRule = mkRule (RuleId "UseBimap") run
                         , suggestion: Just $ Suggestion
                             { replacement: ReplacementText ("second " <> g <> " " <> x)
                             , description: SuggestionDescription "Use second instead of bimap id"
+                              , requiredImports: []
                             }
                         }
                     ]
@@ -112,6 +116,7 @@ useBimapRule = mkRule (RuleId "UseBimap") run
                         , suggestion: Just $ Suggestion
                             { replacement: ReplacementText ("first " <> f <> " " <> x)
                             , description: SuggestionDescription "Use first instead of bimap f id"
+                              , requiredImports: []
                             }
                         }
                     ]
@@ -124,6 +129,7 @@ useBimapRule = mkRule (RuleId "UseBimap") run
                       , suggestion: Just $ Suggestion
                           { replacement: ReplacementText x
                           , description: SuggestionDescription "bimap id id x is just x"
+                            , requiredImports: []
                           }
                       }
                   ]
@@ -149,6 +155,7 @@ useBimapRule = mkRule (RuleId "UseBimap") run
                         , suggestion: Just $ Suggestion
                             { replacement: ReplacementText ("bimap " <> f <> " " <> g <> " " <> x)
                             , description: SuggestionDescription "Use bimap instead of first and second"
+                              , requiredImports: []
                             }
                         }
                     ]
@@ -172,6 +179,7 @@ useBimapRule = mkRule (RuleId "UseBimap") run
                         , suggestion: Just $ Suggestion
                             { replacement: ReplacementText ("bimap " <> f <> " " <> g <> " " <> x)
                             , description: SuggestionDescription "Use bimap instead of first and second"
+                              , requiredImports: []
                             }
                         }
                     ]
@@ -201,3 +209,4 @@ useBimapRule = mkRule (RuleId "UseBimap") run
   isIdentity imports (ExprIdent (QualifiedName { name: Ident name })) =
     (name == "identity" && hasValue imports "identity") || (name == "id" && hasValue imports "identity")
   isIdentity _ _ = false
+

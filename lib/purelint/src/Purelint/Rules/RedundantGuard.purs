@@ -38,6 +38,7 @@ redundantGuardRule = mkRule (RuleId "RedundantGuard") run
                   , suggestion: Just $ Suggestion
                       { replacement: ReplacementText "pure unit"
                       , description: SuggestionDescription "guard true can be replaced with pure unit"
+                        , requiredImports: []
                       }
                   }
               ]
@@ -69,3 +70,4 @@ redundantGuardRule = mkRule (RuleId "RedundantGuard") run
   isFalse :: Expr Void -> Boolean
   isFalse (ExprBoolean _ b) = not b
   isFalse _ = false
+

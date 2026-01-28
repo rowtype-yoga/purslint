@@ -36,6 +36,7 @@ useFoldRule = mkRule (RuleId "UseFold") run
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText "fold"
                   , description: SuggestionDescription "Use fold instead of foldMap identity"
+                    , requiredImports: []
                   }
               }
           ]
@@ -51,3 +52,4 @@ useFoldRule = mkRule (RuleId "UseFold") run
   isIdentity imports (ExprIdent (QualifiedName { name: Ident name })) =
     name == "identity" && hasValue imports "identity"
   isIdentity _ _ = false
+

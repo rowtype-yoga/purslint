@@ -40,6 +40,7 @@ nothingBindRule = mkRule (RuleId "NothingBind") run
                   , suggestion: Just $ Suggestion
                       { replacement: ReplacementText "Nothing"
                       , description: SuggestionDescription "Simplify Nothing >>= f to Nothing"
+                        , requiredImports: []
                       }
                   }
               ]
@@ -54,6 +55,7 @@ nothingBindRule = mkRule (RuleId "NothingBind") run
                   , suggestion: Just $ Suggestion
                       { replacement: ReplacementText "Nothing"
                       , description: SuggestionDescription "Simplify f =<< Nothing to Nothing"
+                        , requiredImports: []
                       }
                   }
               ]
@@ -69,3 +71,4 @@ nothingBindRule = mkRule (RuleId "NothingBind") run
   isNothing (ExprIdent (QualifiedName { name: Ident "Nothing" })) = true
   isNothing (ExprConstructor (QualifiedName { name: Proper "Nothing" })) = true
   isNothing _ = false
+

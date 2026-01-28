@@ -57,6 +57,7 @@ useNullRule = mkRule (RuleId "UseNull") run
       , suggestion: Just $ Suggestion
           { replacement: ReplacementText ("null " <> xText)
           , description: SuggestionDescription $ from <> " can be simplified to null x"
+            , requiredImports: []
           }
       }
 
@@ -77,3 +78,4 @@ useNullRule = mkRule (RuleId "UseNull") run
           _ -> Nothing
       _ -> Nothing
   getLengthArg _ _ = Nothing
+

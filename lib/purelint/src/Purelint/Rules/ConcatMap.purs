@@ -58,6 +58,7 @@ concatMapRule = mkRule (RuleId "ConcatMap") run
                   , suggestion: Just $ Suggestion
                       { replacement: ReplacementText replacement
                       , description: SuggestionDescription msg
+                        , requiredImports: []
                       }
                   }
               ]
@@ -77,3 +78,4 @@ concatMapRule = mkRule (RuleId "ConcatMap") run
 
   getIdentName :: QualifiedName Ident -> String
   getIdentName (QualifiedName { name: Ident name }) = name
+

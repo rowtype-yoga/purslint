@@ -54,6 +54,7 @@ useOnRule = mkRule (RuleId "UseOn") run
                       , suggestion: Just $ Suggestion
                           { replacement: ReplacementText ("on " <> f <> " " <> g1)
                           , description: SuggestionDescription "Use on instead of lambda applying g to both arguments"
+                            , requiredImports: []
                           }
                       }
                   ]
@@ -70,3 +71,4 @@ useOnRule = mkRule (RuleId "UseOn") run
           _ -> Nothing
       _, _ -> Nothing
   extractFunctionCall _ = Nothing
+

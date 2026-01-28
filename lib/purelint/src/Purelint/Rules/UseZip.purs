@@ -39,6 +39,7 @@ useZipRule = mkRule (RuleId "UseZip") run
                   , suggestion: Just $ Suggestion
                       { replacement: ReplacementText "zip"
                       , description: SuggestionDescription "Use zip instead of zipWith Tuple"
+                        , requiredImports: []
                       }
                   }
               ]
@@ -55,6 +56,7 @@ useZipRule = mkRule (RuleId "UseZip") run
                     , suggestion: Just $ Suggestion
                         { replacement: ReplacementText ("zip " <> x)
                         , description: SuggestionDescription "Use zip instead of zipWith Tuple"
+                          , requiredImports: []
                         }
                     }
                 ]
@@ -73,6 +75,7 @@ useZipRule = mkRule (RuleId "UseZip") run
                     , suggestion: Just $ Suggestion
                         { replacement: ReplacementText ("zip " <> x <> " " <> y)
                         , description: SuggestionDescription "Use zip instead of zipWith Tuple"
+                          , requiredImports: []
                         }
                     }
                 ]
@@ -93,3 +96,4 @@ useZipRule = mkRule (RuleId "UseZip") run
   isTupleCtor (ExprConstructor (QualifiedName { name: Proper "Tuple" })) = true
   isTupleCtor (ExprIdent (QualifiedName { name: Ident "Tuple" })) = true
   isTupleCtor _ = false
+

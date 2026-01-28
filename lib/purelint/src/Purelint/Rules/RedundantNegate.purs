@@ -45,6 +45,7 @@ redundantNegateRule = mkRule (RuleId "RedundantNegate") run
                             , suggestion: Just $ Suggestion
                                 { replacement: ReplacementText x
                                 , description: SuggestionDescription "Remove redundant double negation"
+                                  , requiredImports: []
                                 }
                             }
                         ]
@@ -61,3 +62,4 @@ redundantNegateRule = mkRule (RuleId "RedundantNegate") run
   isNegate imports (ExprIdent (QualifiedName { name: Ident name })) =
     name == "negate" && hasValue imports "negate"
   isNegate _ _ = false
+

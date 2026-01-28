@@ -31,10 +31,19 @@ instance Show Severity where
   show Warning = "warning"
   show Error = "error"
 
+-- | Information about imports required for a suggestion
+type RequiredImport =
+  { moduleName :: String
+  , importItem :: Maybe String
+  , codeText :: Maybe String
+  , qualifier :: Maybe String
+  }
+
 -- | A suggested replacement for the original code
 newtype Suggestion = Suggestion
   { replacement :: ReplacementText
   , description :: SuggestionDescription
+  , requiredImports :: Array RequiredImport
   }
 
 derive instance Newtype Suggestion _
@@ -93,3 +102,5 @@ newtype SourceCode = SourceCode String
 derive instance Newtype SourceCode _
 derive newtype instance Eq SourceCode
 derive newtype instance Show SourceCode
+
+

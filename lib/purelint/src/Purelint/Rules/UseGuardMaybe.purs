@@ -42,6 +42,7 @@ useGuardMaybeRule = mkRule (RuleId "UseGuardMaybe") run
                   , suggestion: Just $ Suggestion
                       { replacement: ReplacementText ("guard " <> c <> " $> " <> x)
                       , description: SuggestionDescription "Use guard c $> x instead of if-then-else with Maybe"
+                        , requiredImports: []
                       }
                   }
               ]
@@ -75,3 +76,4 @@ useGuardMaybeRule = mkRule (RuleId "UseGuardMaybe") run
   isNothing imports (ExprConstructor (QualifiedName { name: _ })) =
     hasValue imports "Nothing"
   isNothing _ _ = false
+

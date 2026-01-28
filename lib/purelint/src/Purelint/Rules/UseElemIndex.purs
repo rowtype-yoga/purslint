@@ -44,6 +44,7 @@ useElemIndexRule = mkRule (RuleId "UseElemIndex") run
                       , suggestion: Just $ Suggestion
                           { replacement: ReplacementText ("elemIndex " <> aText)
                           , description: SuggestionDescription "Use elemIndex instead of findIndex (== a)"
+                            , requiredImports: []
                           }
                       }
                   ]
@@ -63,6 +64,7 @@ useElemIndexRule = mkRule (RuleId "UseElemIndex") run
                       , suggestion: Just $ Suggestion
                           { replacement: ReplacementText ("elemIndex " <> aText <> " " <> x)
                           , description: SuggestionDescription "Use elemIndex instead of findIndex (== a)"
+                            , requiredImports: []
                           }
                       }
                   ]
@@ -126,3 +128,4 @@ useElemIndexRule = mkRule (RuleId "UseElemIndex") run
   getBinderName (BinderVar (Name { name: Ident name })) = Just name
   getBinderName (BinderParens (Wrapped { value: inner })) = getBinderName inner
   getBinderName _ = Nothing
+

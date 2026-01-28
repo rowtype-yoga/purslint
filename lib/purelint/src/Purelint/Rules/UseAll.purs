@@ -45,6 +45,7 @@ useAllRule = mkRule (RuleId "UseAll") run
                         , suggestion: Just $ Suggestion
                             { replacement: ReplacementText ("all " <> fText <> " " <> xText)
                             , description: SuggestionDescription "and (map f x) can be simplified to all f x"
+                              , requiredImports: []
                             }
                         }
                     ]
@@ -66,3 +67,4 @@ useAllRule = mkRule (RuleId "UseAll") run
   isMapLike imports (ExprIdent (QualifiedName { name: Ident name })) = 
     name == "map" && hasValue imports "map"
   isMapLike _ _ = false
+

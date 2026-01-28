@@ -43,6 +43,7 @@ useFromJustRule = mkRule (RuleId "UseFromJust") run
                       , suggestion: Just $ Suggestion
                           { replacement: ReplacementText xText
                           , description: SuggestionDescription "Simplify fromMaybe with Just"
+                            , requiredImports: []
                           }
                       }
                   ]
@@ -59,6 +60,7 @@ useFromJustRule = mkRule (RuleId "UseFromJust") run
                           , suggestion: Just $ Suggestion
                               { replacement: ReplacementText d
                               , description: SuggestionDescription "Simplify fromMaybe with Nothing"
+                                , requiredImports: []
                               }
                           }
                       ]
@@ -73,6 +75,7 @@ useFromJustRule = mkRule (RuleId "UseFromJust") run
                           , suggestion: Just $ Suggestion
                               { replacement: ReplacementText d
                               , description: SuggestionDescription "Simplify fromMaybe with Nothing"
+                                , requiredImports: []
                               }
                           }
                       ]
@@ -102,3 +105,4 @@ useFromJustRule = mkRule (RuleId "UseFromJust") run
           _ -> Nothing
       _ -> Nothing
   getJustArg _ = Nothing
+

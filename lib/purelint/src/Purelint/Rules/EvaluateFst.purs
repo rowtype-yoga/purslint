@@ -43,6 +43,7 @@ evaluateFstRule = mkRule (RuleId "EvaluateFst") run
                       , suggestion: Just $ Suggestion
                           { replacement: ReplacementText x
                           , description: SuggestionDescription "Extract first element directly"
+                            , requiredImports: []
                           }
                       }
                   ]
@@ -63,6 +64,7 @@ evaluateFstRule = mkRule (RuleId "EvaluateFst") run
                       , suggestion: Just $ Suggestion
                           { replacement: ReplacementText y
                           , description: SuggestionDescription "Extract second element directly"
+                            , requiredImports: []
                           }
                       }
                   ]
@@ -94,3 +96,4 @@ evaluateFstRule = mkRule (RuleId "EvaluateFst") run
           _ -> Nothing
       _ -> Nothing
   getTupleElements _ = Nothing
+

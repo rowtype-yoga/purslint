@@ -42,6 +42,7 @@ redundantReverseRule = mkRule (RuleId "RedundantReverse") run
                 , suggestion: Just $ Suggestion
                     { replacement: ReplacementText x
                     , description: SuggestionDescription "Remove redundant double reverse"
+                      , requiredImports: []
                     }
                 }
             ]
@@ -56,3 +57,4 @@ redundantReverseRule = mkRule (RuleId "RedundantReverse") run
   isReverse imports (ExprIdent (QualifiedName { name: Ident name })) =
     name == "reverse" && hasValue imports "reverse"
   isReverse _ _ = false
+

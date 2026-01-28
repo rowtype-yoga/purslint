@@ -77,6 +77,7 @@ letToWhereRule = mkRule (RuleId "LetToWhere") run
             , suggestion: Just $ Suggestion
                 { replacement: ReplacementText replacement
                 , description: SuggestionDescription "Convert to where clause"
+                  , requiredImports: []
                 }
             }
         ]
@@ -118,3 +119,4 @@ letToWhereRule = mkRule (RuleId "LetToWhere") run
     Comment str -> str
     Space n -> power " " n
     Line v _ -> absurd v
+

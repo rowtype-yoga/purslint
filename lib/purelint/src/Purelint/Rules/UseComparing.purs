@@ -55,6 +55,7 @@ useComparingRule = mkRule (RuleId "UseComparing") run
                 , suggestion: Just $ Suggestion
                     { replacement: ReplacementText ("comparing " <> f1)
                     , description: SuggestionDescription "Use comparing instead of lambda with compare"
+                      , requiredImports: []
                     }
                 }
             ]
@@ -74,3 +75,4 @@ useComparingRule = mkRule (RuleId "UseComparing") run
           _ -> Nothing
       _, _ -> Nothing
   extractFunctionCall _ = Nothing
+

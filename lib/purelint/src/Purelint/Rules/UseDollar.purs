@@ -86,6 +86,7 @@ useDollarRule = mkRule (RuleId "UseDollar") run
         , suggestion: Just $ Suggestion
             { replacement: ReplacementText replacement
             , description: SuggestionDescription "Replace parentheses with $"
+              , requiredImports: []
             }
         }
 
@@ -93,3 +94,4 @@ useDollarRule = mkRule (RuleId "UseDollar") run
   printAppSpine = case _ of
     AppTerm e -> printExpr e
     AppType _ t -> "@" <> printType t
+

@@ -63,6 +63,7 @@ etaReduceRule = mkRule (RuleId "EtaReduce") run
                     , suggestion: Just $ Suggestion
                         { replacement: ReplacementText fnText
                         , description: SuggestionDescription $ "\\x -> f x can be simplified to f"
+                          , requiredImports: []
                         }
                     }
                 ]
@@ -89,3 +90,4 @@ etaReduceRule = mkRule (RuleId "EtaReduce") run
   checkArg = case _, _ of
     name, (AppTerm e) -> e # mentionsParam name
     _, _ -> false
+

@@ -84,5 +84,7 @@ useFoldBoolRule = mkRule (RuleId "UseFoldBool") run
       , suggestion: Just $ Suggestion
           { replacement: ReplacementText replacement
           , description: SuggestionDescription $ "Replace with " <> replacement
+            , requiredImports: []
           }
       }
+

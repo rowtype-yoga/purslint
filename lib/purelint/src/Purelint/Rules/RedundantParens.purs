@@ -256,6 +256,7 @@ redundantParensRule = mkRule (RuleId "RedundantParens") run
     , suggestion: Just $ Suggestion
         { replacement: ReplacementText (printExpr inner)
         , description: SuggestionDescription "Remove unnecessary parentheses"
+          , requiredImports: []
         }
     }
 
@@ -321,6 +322,7 @@ redundantParensRule = mkRule (RuleId "RedundantParens") run
     , suggestion: Just $ Suggestion
         { replacement: ReplacementText (printBinder inner)
         , description: SuggestionDescription "Remove unnecessary parentheses"
+          , requiredImports: []
         }
     }
 
@@ -415,5 +417,7 @@ redundantParensRule = mkRule (RuleId "RedundantParens") run
     , suggestion: Just $ Suggestion
         { replacement: ReplacementText (printType inner)
         , description: SuggestionDescription "Remove unnecessary parentheses"
+          , requiredImports: []
         }
     }
+

@@ -156,6 +156,7 @@ useCaseOfRule = mkRule (RuleId "UseCaseOf") run
                       , suggestion: Just $ Suggestion
                           { replacement: ReplacementText replacement
                           , description: SuggestionDescription "Convert to case _ of"
+                            , requiredImports: []
                           }
                       }
                   ]
@@ -235,3 +236,4 @@ useCaseOfRule = mkRule (RuleId "UseCaseOf") run
     Comment str -> str
     Space n -> power " " n
     Line v _ -> absurd v
+

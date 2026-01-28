@@ -56,6 +56,13 @@ useMapMaybeRule = mkRule (RuleId "UseMapMaybe") run
                   , suggestion: Just $ Suggestion
                       { replacement: ReplacementText ("mapMaybe " <> f <> " " <> x)
                       , description: SuggestionDescription "Use mapMaybe instead of catMaybes composed with map"
+                      , requiredImports:
+                          [ { moduleName: "Data.Array"
+                            , importItem: Just "mapMaybe"
+                            , codeText: Just "mapMaybe"
+                            , qualifier: Nothing
+                            }
+                          ]
                       }
                   }
               ]
@@ -71,3 +78,4 @@ useMapMaybeRule = mkRule (RuleId "UseMapMaybe") run
   isMap imports (ExprIdent (QualifiedName { name: Ident name })) =
     name == "map" && hasValue imports "map"
   isMap _ _ = false
+

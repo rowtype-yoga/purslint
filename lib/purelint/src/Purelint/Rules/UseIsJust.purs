@@ -37,6 +37,7 @@ useIsJustRule = mkRule (RuleId "UseIsJust") run
                 , suggestion: Just $ Suggestion
                     { replacement: ReplacementText "isJust"
                     , description: SuggestionDescription "Use isJust instead of maybe false (const true)"
+                      , requiredImports: []
                     }
                 }
             ]
@@ -66,3 +67,4 @@ useIsJustRule = mkRule (RuleId "UseIsJust") run
   isTrue :: Expr Void -> Boolean
   isTrue (ExprBoolean _ b) = b
   isTrue _ = false
+

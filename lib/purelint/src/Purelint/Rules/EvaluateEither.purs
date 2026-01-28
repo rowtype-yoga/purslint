@@ -50,6 +50,7 @@ evaluateEitherRule = mkRule (RuleId "EvaluateEither") run
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText replacement
                   , description: SuggestionDescription "Apply f directly to x"
+                    , requiredImports: []
                   }
               }
           ]
@@ -67,6 +68,7 @@ evaluateEitherRule = mkRule (RuleId "EvaluateEither") run
                   , suggestion: Just $ Suggestion
                       { replacement: ReplacementText replacement
                       , description: SuggestionDescription "Apply g directly to y"
+                        , requiredImports: []
                       }
                   }
               ]
@@ -117,3 +119,4 @@ evaluateEitherRule = mkRule (RuleId "EvaluateEither") run
     ExprRecord _ -> printExpr e
     ExprParens _ -> printExpr e
     _ -> "(" <> printExpr e <> ")"
+

@@ -38,6 +38,7 @@ useUnlessRule = mkRule (RuleId "UseUnless") run
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText ("unless " <> condText <> " " <> actionText)
                   , description: SuggestionDescription "Use unless instead of if/else with pure unit"
+                    , requiredImports: []
                   }
               }
           ]
@@ -53,3 +54,4 @@ useUnlessRule = mkRule (RuleId "UseUnless") run
   isPure imports (ExprIdent (QualifiedName { name: Ident name })) =
     (name == "pure" && hasValue imports "pure") || (name == "return" && hasValue imports "return")
   isPure _ _ = false
+

@@ -68,6 +68,7 @@ letToDoRule = mkRule (RuleId "LetToDo") run
             , suggestion: Just $ Suggestion
                 { replacement: ReplacementText replacement
                 , description: SuggestionDescription "Convert to do notation"
+                  , requiredImports: []
                 }
             }
         ]
@@ -111,6 +112,7 @@ letToDoRule = mkRule (RuleId "LetToDo") run
             , suggestion: Just $ Suggestion
                 { replacement: ReplacementText replacement
                 , description: SuggestionDescription "Convert to do notation"
+                  , requiredImports: []
                 }
             }
         ]
@@ -154,3 +156,5 @@ letToDoRule = mkRule (RuleId "LetToDo") run
     Comment str -> str
     Space n -> power " " n
     Line v _ -> absurd v
+
+

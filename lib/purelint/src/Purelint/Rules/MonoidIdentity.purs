@@ -42,6 +42,7 @@ monoidIdentityRule = mkRule (RuleId "MonoidIdentity") run
                   , suggestion: Just $ Suggestion
                       { replacement: ReplacementText rhsText
                       , description: SuggestionDescription "mempty <> x can be simplified to x (Monoid left identity)"
+                        , requiredImports: []
                       }
                   }
               ]
@@ -56,6 +57,7 @@ monoidIdentityRule = mkRule (RuleId "MonoidIdentity") run
                   , suggestion: Just $ Suggestion
                       { replacement: ReplacementText lhsText
                       , description: SuggestionDescription "x <> mempty can be simplified to x (Monoid right identity)"
+                        , requiredImports: []
                       }
                   }
               ]
@@ -67,3 +69,4 @@ monoidIdentityRule = mkRule (RuleId "MonoidIdentity") run
   isMempty imports (ExprIdent (QualifiedName { name: Ident name })) =
     name == "mempty" && hasValue imports "mempty"
   isMempty _ _ = false
+

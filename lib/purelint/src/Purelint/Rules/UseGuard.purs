@@ -54,6 +54,7 @@ useGuardRule = mkRule (RuleId "UseGuard") run
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText replacement
                   , description: SuggestionDescription "if cond then pure unit else x can be replaced with unless cond x"
+                    , requiredImports: []
                   }
               }
           ]
@@ -71,6 +72,7 @@ useGuardRule = mkRule (RuleId "UseGuard") run
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText replacement
                   , description: SuggestionDescription "if cond then x else pure unit can be replaced with when cond x"
+                    , requiredImports: []
                   }
               }
           ]
@@ -97,3 +99,4 @@ useGuardRule = mkRule (RuleId "UseGuard") run
   isUnit :: Expr Void -> Boolean
   isUnit (ExprIdent (QualifiedName { name: Ident name })) = name == "unit"
   isUnit _ = false
+

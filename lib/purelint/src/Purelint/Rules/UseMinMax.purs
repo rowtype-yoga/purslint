@@ -64,6 +64,7 @@ useMinMaxRule = mkRule (RuleId "UseMinMax") run
     , suggestion: Just $ Suggestion
         { replacement: ReplacementText (fn <> " " <> a <> " " <> b)
         , description: SuggestionDescription ("Use " <> fn <> " instead of if/else with comparison")
+          , requiredImports: []
         }
     }
 
@@ -76,3 +77,4 @@ useMinMaxRule = mkRule (RuleId "UseMinMax") run
       _ -> Nothing
   getComparison imports (ExprParens (Wrapped { value })) = getComparison imports value
   getComparison _ _ = Nothing
+

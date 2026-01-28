@@ -42,6 +42,7 @@ useNotElemRule = mkRule (RuleId "UseNotElem") run
                     , suggestion: Just $ Suggestion
                         { replacement: ReplacementText ("notElem " <> xText <> " " <> yText)
                         , description: SuggestionDescription "Use notElem instead of not (elem ...)"
+                          , requiredImports: []
                         }
                     }
                 ]
@@ -64,3 +65,4 @@ useNotElemRule = mkRule (RuleId "UseNotElem") run
       _ -> Nothing
   getElemArgs imports (ExprParens (Wrapped { value })) = getElemArgs imports value
   getElemArgs _ _ = Nothing
+

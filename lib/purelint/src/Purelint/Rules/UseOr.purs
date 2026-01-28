@@ -40,6 +40,7 @@ useOrRule = mkRule (RuleId "UseOr") run
                   , suggestion: Just $ Suggestion
                       { replacement: ReplacementText "or"
                       , description: SuggestionDescription "Use or instead of any identity"
+                        , requiredImports: []
                       }
                   }
               ]
@@ -56,6 +57,7 @@ useOrRule = mkRule (RuleId "UseOr") run
                     , suggestion: Just $ Suggestion
                         { replacement: ReplacementText ("or " <> x)
                         , description: SuggestionDescription "Use or instead of any identity"
+                          , requiredImports: []
                         }
                     }
                 ]
@@ -76,3 +78,4 @@ useOrRule = mkRule (RuleId "UseOr") run
   isIdentity imports (ExprIdent (QualifiedName { name: Ident name })) =
     (name == "identity" || name == "id") && hasValue imports "identity"
   isIdentity _ _ = false
+

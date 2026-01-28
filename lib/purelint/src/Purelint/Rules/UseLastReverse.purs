@@ -50,6 +50,7 @@ useLastReverseRule = mkRule (RuleId "UseLastReverse") run
                             , suggestion: Just $ Suggestion
                                 { replacement: ReplacementText (newFn <> " " <> x)
                                 , description: SuggestionDescription $ "Use " <> newFn <> " instead"
+                                  , requiredImports: []
                                 }
                             }
                         ]
@@ -76,3 +77,4 @@ useLastReverseRule = mkRule (RuleId "UseLastReverse") run
   isReverse imports (ExprIdent (QualifiedName { name: Ident name })) =
     name == "reverse" && hasValue imports "reverse"
   isReverse _ _ = false
+

@@ -59,6 +59,7 @@ etaReduceDeclRule = mkRule (RuleId "EtaReduceDecl") run
             , suggestion: Just $ Suggestion
                 { replacement: ReplacementText ("= " <> newRhs)
                 , description: SuggestionDescription "Remove redundant parameter"
+                  , requiredImports: []
                 }
             }
         ]
@@ -87,3 +88,4 @@ etaReduceDeclRule = mkRule (RuleId "EtaReduceDecl") run
   checkArg :: String -> AppSpine Expr Void -> Boolean
   checkArg name (AppTerm e) = mentionsParam name e
   checkArg _ _ = false
+

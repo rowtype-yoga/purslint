@@ -50,6 +50,7 @@ redundantBindRule = mkRule (RuleId "RedundantBind") run
             , suggestion: Just $ Suggestion
                 { replacement: ReplacementText lhsText
                 , description: SuggestionDescription "x >>= pure can be simplified to x"
+                  , requiredImports: []
                 }
             }
         ]
@@ -66,6 +67,7 @@ redundantBindRule = mkRule (RuleId "RedundantBind") run
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText replacement
                   , description: SuggestionDescription "Apply f directly to x"
+                    , requiredImports: []
                   }
               }
           ]
@@ -83,3 +85,4 @@ redundantBindRule = mkRule (RuleId "RedundantBind") run
           [AppTerm arg] -> Just arg
           _ -> Nothing
   getPureArg _ _ = Nothing
+

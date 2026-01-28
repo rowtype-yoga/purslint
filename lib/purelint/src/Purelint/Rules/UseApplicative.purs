@@ -43,6 +43,7 @@ useApplicativeRule = run # mkRule (RuleId "UseApplicative")
               , suggestion: Just $ Suggestion
                   { replacement: ReplacementText (f <> " <$> " <> x)
                   , description: SuggestionDescription "Use <$> instead of pure f <*> x"
+                    , requiredImports: []
                   }
               }
           ]
@@ -56,3 +57,4 @@ useApplicativeRule = run # mkRule (RuleId "UseApplicative")
   isPure imports (ExprIdent (QualifiedName { name: Ident name })) =
     name == "pure" && hasValue imports "pure"
   isPure _ _ = false
+

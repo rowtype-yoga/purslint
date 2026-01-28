@@ -47,6 +47,7 @@ useUncurryRule = mkRule (RuleId "UseUncurry") run
                         , suggestion: Just $ Suggestion
                             { replacement: ReplacementText ("uncurry " <> f <> " " <> p1Text)
                             , description: SuggestionDescription "Use uncurry instead of fst/snd"
+                              , requiredImports: []
                             }
                         }
                     ]
@@ -88,3 +89,4 @@ useUncurryRule = mkRule (RuleId "UseUncurry") run
             [AppTerm arg] -> Just arg
             _ -> Nothing
       _ -> Nothing
+
