@@ -78,6 +78,8 @@ import Purelint.Rules.UseMinMax (useMinMaxRule)
 import Purelint.Rules.UseMinimumSort (useMinimumSortRule)
 import Purelint.Rules.UseNotElem (useNotElemRule)
 import Purelint.Rules.UseNull (useNullRule)
+import Purelint.Rules.UseCaseOf (useCaseOfRule)
+import Purelint.Rules.FlattenCase (flattenCaseRule)
 import Purelint.Rules.UseOn (useOnRule)
 import Purelint.Rules.UseOr (useOrRule)
 import Purelint.Rules.UsePatternGuards (usePatternGuardsRule)
@@ -97,7 +99,7 @@ import Purelint.Rules.RedundantParens (redundantParensRule)
 import Purelint.Runner (runRules)
 import Purelint.Types (LintResult(..), LintWarning(..), Severity(..), SourceCode(..), Suggestion(..))
 
--- | All available rules (76 total)
+-- | All available rules (81 total)
 allRules :: Array Rule
 allRules =
   [ alternativeLawRule
@@ -167,6 +169,8 @@ allRules =
   , useOnRule
   , useOrRule
   , usePatternGuardsRule
+  , useCaseOfRule
+  , flattenCaseRule
   , useReplicateRule
   , useSequenceRule
   , useSpanRule

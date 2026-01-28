@@ -1,11 +1,8 @@
 module Purelint.ImportFix where
 
-import Prelude
-
 import Data.Maybe (Maybe)
-import PureScript.CST.Types (SourceToken)
-
--- [TODO]: This got lost, I'm not sure what it should do
+-- NOTE: Import processing is currently a no-op. We assume required imports
+-- are already present in the source and keep replacements intact.
 processImports :: String -> String -> Array
             { codeText :: Maybe String
             , importItem :: Maybe String
@@ -16,5 +13,5 @@ processImports :: String -> String -> Array
              , replacement :: String
              , source :: String
              }
-processImports source replacement imports = do
-  { linesAdded: 0, replacement: "", source: source }
+processImports source replacement _imports =
+  { linesAdded: 0, replacement, source }

@@ -32,6 +32,7 @@ import Purelint.Rules.UseAll (useAllRule)
 import Purelint.Rules.BooleanSimplify (booleanSimplifyRule)
 import Purelint.Rules.CollapseLambdas (collapseLambdasRule)
 import Purelint.Rules.UseConst (useConstRule)
+import Purelint.Rules.UseDollar (useDollarRule)
 import Purelint.Rules.UseNull (useNullRule)
 import Purelint.Rules.UseFromMaybe (useFromMaybeRule)
 import Purelint.Rules.UseIsJust (useIsJustRule)
@@ -53,6 +54,7 @@ import Purelint.Rules.UseMaybeMap (useMaybeMapRule)
 import Purelint.Rules.UseApplicative (useApplicativeRule)
 import Purelint.Rules.UseBindFlip (useBindFlipRule)
 import Purelint.Rules.UseFor (useForRule)
+import Purelint.Rules.UseUnwrap (useUnwrapRule)
 import Purelint.Rules.RedundantGuard (redundantGuardRule)
 import Purelint.Rules.UseComparing (useComparingRule)
 import Purelint.Rules.UseOn (useOnRule)
@@ -231,6 +233,15 @@ main = do
              <> whenNotTests
              <> unlessNotTests
              <> useZipTests
+             <> useReplicateTests
+             <> useUncurryTests
+             <> useFromJustTests
+             <> useHeadTests
+             <> useElemIndexTests
+             <> useBreakTests
+             <> useSpanTests
+             <> useDollarTests
+             <> useUnwrapTests
              <> redundantNegateTests
              <> redundantIdTests
              <> nothingBindTests
@@ -1336,6 +1347,162 @@ useZipTests =
       (withPrelude "x = zipWith Tuple [1] [2]") "UseZip"
   , assertSuggestion "UseZip: suggests zip" [useZipRule]
       (withPrelude "x = zipWith Tuple [1] [2]") "zip [ 1 ] [ 2 ]"
+  ]
+
+-- ============================================================================
+-- UseReplicate Tests
+-- ============================================================================
+
+useReplicateTests :: Array TestResult
+useReplicateTests =
+  [ assertWarningCount "UseReplicate: take n (repeat x)" [useReplicateRule]
+      (withPrelude "x = take 3 (repeat 1)") 1
+  , assertRuleId "UseReplicate: correct rule id" [useReplicateRule]
+      (withPrelude "x = take 3 (repeat 1)") "UseReplicate"
+  , assertSuggestion "UseReplicate: suggests replicate" [useReplicateRule]
+      (withPrelude "x = take 3 (repeat 1)") "replicate 3 1"
+  , assertWarningCount "UseReplicate: no fire on take n xs" [useReplicateRule]
+      (withPrelude "x = take 3 xs") 0
+  , assertWarningCount "UseReplicate: no fire without import" [useReplicateRule]
+      (withoutImports "x = take 3 (repeat 1)") 0
+  ]
+
+-- ============================================================================
+-- UseUncurry Tests
+-- ============================================================================
+
+useUncurryTests :: Array TestResult
+useUncurryTests =
+  [ assertWarningCount "UseUncurry: f (fst p) (snd p)" [useUncurryRule]
+      (withPrelude "x = f (fst p) (snd p)") 1
+  , assertRuleId "UseUncurry: correct rule id" [useUncurryRule]
+      (withPrelude "x = f (fst p) (snd p)") "UseUncurry"
+  , assertSuggestion "UseUncurry: suggests uncurry" [useUncurryRule]
+      (withPrelude "x = f (fst p) (snd p)") "uncurry f p"
+  , assertWarningCount "UseUncurry: no fire on different args" [useUncurryRule]
+      (withPrelude "x = f (fst p) (snd q)") 0
+  , assertWarningCount "UseUncurry: no fire without import" [useUncurryRule]
+      (withoutImports "x = f (fst p) (snd p)") 0
+  ]
+
+-- ============================================================================
+-- UseFromJust Tests
+-- ============================================================================
+
+useFromJustTests :: Array TestResult
+useFromJustTests =
+  [ assertWarningCount "UseFromJust: fromMaybe d (Just x)" [useFromJustRule]
+      (withPrelude "x = fromMaybe 0 (Just 1)") 1
+  , assertRuleId "UseFromJust: correct rule id" [useFromJustRule]
+      (withPrelude "x = fromMaybe 0 (Just 1)") "UseFromJust"
+  , assertSuggestion "UseFromJust: simplifies Just" [useFromJustRule]
+      (withPrelude "x = fromMaybe 0 (Just 1)") "1"
+  , assertWarningCount "UseFromJust: fromMaybe d Nothing" [useFromJustRule]
+      (withPrelude "x = fromMaybe 0 Nothing") 1
+  , assertSuggestion "UseFromJust: simplifies Nothing" [useFromJustRule]
+      (withPrelude "x = fromMaybe 0 Nothing") "0"
+  , assertWarningCount "UseFromJust: no fire without import" [useFromJustRule]
+      (withoutImports "x = fromMaybe 0 (Just 1)") 0
+  ]
+
+-- ============================================================================
+-- UseHead Tests
+-- ============================================================================
+
+useHeadTests :: Array TestResult
+useHeadTests =
+  [ assertWarningCount "UseHead: xs !! 0" [useHeadRule]
+      (withPrelude "x = xs !! 0") 1
+  , assertRuleId "UseHead: correct rule id" [useHeadRule]
+      (withPrelude "x = xs !! 0") "UseHead"
+  , assertSuggestion "UseHead: suggests head" [useHeadRule]
+      (withPrelude "x = xs !! 0") "head"
+  , assertWarningCount "UseHead: no fire on xs !! 1" [useHeadRule]
+      (withPrelude "x = xs !! 1") 0
+  , assertWarningCount "UseHead: no fire without import" [useHeadRule]
+      (withoutImports "x = xs !! 0") 0
+  ]
+
+-- ============================================================================
+-- UseElemIndex Tests
+-- ============================================================================
+
+useElemIndexTests :: Array TestResult
+useElemIndexTests =
+  [ assertWarningCount "UseElemIndex: findIndex (\\x -> x == a) xs" [useElemIndexRule]
+      (withPrelude "x = findIndex (\\y -> y == a) xs") 1
+  , assertRuleId "UseElemIndex: correct rule id" [useElemIndexRule]
+      (withPrelude "x = findIndex (\\y -> y == a) xs") "UseElemIndex"
+  , assertSuggestion "UseElemIndex: suggests elemIndex" [useElemIndexRule]
+      (withPrelude "x = findIndex (\\y -> y == a) xs") "elemIndex a xs"
+  , assertWarningCount "UseElemIndex: no fire on other predicate" [useElemIndexRule]
+      (withPrelude "x = findIndex (\\y -> y > a) xs") 0
+  , assertWarningCount "UseElemIndex: no fire without import" [useElemIndexRule]
+      (withoutImports "x = findIndex (\\y -> y == a) xs") 0
+  ]
+
+-- ============================================================================
+-- UseBreak Tests
+-- ============================================================================
+
+useBreakTests :: Array TestResult
+useBreakTests =
+  [ assertWarningCount "UseBreak: span (not p) xs" [useBreakRule]
+      (withPrelude "x = span (not p) xs") 1
+  , assertRuleId "UseBreak: correct rule id" [useBreakRule]
+      (withPrelude "x = span (not p) xs") "UseBreak"
+  , assertSuggestion "UseBreak: suggests break" [useBreakRule]
+      (withPrelude "x = span (not p) xs") "break p xs"
+  , assertWarningCount "UseBreak: no fire without import" [useBreakRule]
+      (withoutImports "x = span (not p) xs") 0
+  ]
+
+-- ============================================================================
+-- UseSpan Tests
+-- ============================================================================
+
+useSpanTests :: Array TestResult
+useSpanTests =
+  [ assertWarningCount "UseSpan: break (not p) xs" [useSpanRule]
+      (withPrelude "x = break (not p) xs") 1
+  , assertRuleId "UseSpan: correct rule id" [useSpanRule]
+      (withPrelude "x = break (not p) xs") "UseSpan"
+  , assertSuggestion "UseSpan: suggests span" [useSpanRule]
+      (withPrelude "x = break (not p) xs") "span p xs"
+  , assertWarningCount "UseSpan: no fire without import" [useSpanRule]
+      (withoutImports "x = break (not p) xs") 0
+  ]
+
+-- ============================================================================
+-- UseDollar Tests
+-- ============================================================================
+
+useDollarTests :: Array TestResult
+useDollarTests =
+  [ assertWarningCount "UseDollar: map f (filter g xs)" [useDollarRule]
+      (withPrelude "x = map f (filter g xs)") 1
+  , assertRuleId "UseDollar: correct rule id" [useDollarRule]
+      (withPrelude "x = map f (filter g xs)") "UseDollar"
+  , assertSuggestion "UseDollar: suggests $" [useDollarRule]
+      (withPrelude "x = map f (filter g xs)") "map f $ filter g xs"
+  , assertWarningCount "UseDollar: no fire on atomic arg" [useDollarRule]
+      (withPrelude "x = f (1)") 0
+  ]
+
+-- ============================================================================
+-- UseUnwrap Tests
+-- ============================================================================
+
+useUnwrapTests :: Array TestResult
+useUnwrapTests =
+  [ assertRuleId "UseUnwrap: correct rule id" [useUnwrapRule]
+      (withPrelude "x = unwrap foo") "UseUnwrap"
+  , assertSuggestion "UseUnwrap: suggests un ?Constructor" [useUnwrapRule]
+      (withPrelude "x = unwrap foo") "un ?Constructor foo"
+  , assertWarningCount "UseUnwrap: unwrap partial" [useUnwrapRule]
+      (withPrelude "x = unwrap") 1
+  , assertSuggestion "UseUnwrap: unwrap partial suggestion" [useUnwrapRule]
+      (withPrelude "x = unwrap") "un ?Constructor"
   ]
 
 -- ============================================================================
