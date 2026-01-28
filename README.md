@@ -10,6 +10,15 @@ For a complete list, see `lib/purelint/src/Purelint/Rules/`.
 
 ## Installation
 
+### npm (recommended)
+
+```bash
+npm install -g purslint
+
+# CLI
+purelint --help
+```
+
 ### Prerequisites
 
 - [PureScript](https://www.purescript.org/) compiler (`purs`)

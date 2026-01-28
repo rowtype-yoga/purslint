@@ -1,5 +1,5 @@
 {
-  "name": "purelint",
+  "name": "purslint",
   "version": "0.1.0",
   "description": "A linter for PureScript",
   "type": "module",
@@ -24,6 +24,14 @@
     "purescript",
     "linter"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rowtype-yoga/purslint"
+  },
+  "homepage": "https://github.com/rowtype-yoga/purslint",
+  "bugs": {
+    "url": "https://github.com/rowtype-yoga/purslint/issues"
+  },
   "license": "MIT",
   "dependencies": {
     "spago": "^0.93.45"
