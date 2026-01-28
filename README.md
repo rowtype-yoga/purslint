@@ -141,6 +141,13 @@ purelint/
 
 ## Development
 
+### Publishing to npm
+
+Publishing is handled by GitHub Actions. Add an `NPM_TOKEN` secret with an
+automation or granular token that has publish rights for `purslint`, then
+create a GitHub Release to trigger the workflow. You can also run it manually
+via the workflow dispatch.
+
 ### Adding a New Rule
 
 1. Create a new file in `lib/purslint/src/Purslint/Rules/`
