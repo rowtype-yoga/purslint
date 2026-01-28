@@ -4,20 +4,9 @@ A PureScript linter inspired by [hlint](https://github.com/ndmitchell/hlint), pr
 
 ## Features
 
-PureLint includes 10 lint rules:
+PureLint currently ships with **81 lint rules**, covering common PureScript refactors and simplifications.
 
-| Rule | Description | Example |
-|------|-------------|---------|
-| `FmapId` | `map identity x` → `x` | Redundant identity mapping |
-| `ConcatMap` | `join <<< map f` → `f =<< _` | Use bind instead of join+map |
-| `MapFusion` | `map f <<< map g` → `map (f <<< g)` | Fuse consecutive maps |
-| `UseTraverse` | `sequence <<< map f` → `traverse f` | Use traverse |
-| `NotEqual` | `not (x == y)` → `x /= y` | Use not-equal operator |
-| `UseGuard` | `if c then Just x else Nothing` → `guard` | Use guard from Control.MonadZero |
-| `EtaReduce` | `\x -> f x` → `f` | Eta reduce lambdas |
-| `EtaReduceDecl` | `f x = g x` → `f = g` | Eta reduce declarations |
-| `RedundantBind` | `x >>= pure` → `x` | Remove redundant bind |
-| `LetToWhere` | `let x = y in z` → `z where x = y` | Prefer where clauses |
+For a complete list, see `lib/purelint/src/Purelint/Rules/`.
 
 ## Installation
 
@@ -83,6 +72,28 @@ A Zed extension is available in the `zed-extension/` directory. To install:
 4. Select the `zed-extension/` directory
 
 The extension will automatically use the `purelint-lsp` binary.
+
+#### Neovim (nvim-lspconfig)
+
+After building `purelint-lsp` (see build steps below), you can configure Neovim like this:
+
+```lua
+require("lspconfig").purelint = {
+  default_config = {
+    cmd = { "/path/to/purelint-lsp" },
+    filetypes = { "purescript" },
+    root_dir = require("lspconfig.util").root_pattern(".git", "spago.yaml", "package.json"),
+  },
+}
+
+require("lspconfig").purelint.setup({})
+```
+
+If you prefer to run the bundled JS directly:
+
+```lua
+cmd = { "node", "/path/to/dist/purelint-lsp.js" }
+```
 
 ## Configuration
 
