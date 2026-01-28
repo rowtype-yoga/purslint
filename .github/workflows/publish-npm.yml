@@ -14,15 +14,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: purescript-contrib/setup-purescript@v2
-        with:
-          purescript: "0.15.15"
-
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
 
+      - run: npm install -g purescript@0.15.15
       - run: npm ci
       - run: npm run dist
       - run: npm publish --access public
