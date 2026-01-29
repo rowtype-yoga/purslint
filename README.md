@@ -1,6 +1,11 @@
 # PureLint
 
-![Purslint logo](vscode-extension/purslint.jpg)
+<p align="center">
+  <img src="vscode-extension/purslint.jpg" alt="Purslint logo" width="180" />
+</p>
+<p align="center">
+  <video src="demo.mp4" width="480" controls playsinline></video>
+</p>
 
 A PureScript linter inspired by [hlint](https://github.com/ndmitchell/hlint), providing suggestions for cleaner, more idiomatic PureScript code.
 
@@ -25,33 +30,19 @@ purelint --help
 
 - [PureScript](https://www.purescript.org/) compiler (`purs`)
 - [Spago](https://github.com/purescript/spago) package manager
-- [Go](https://golang.org/) 1.19+
-- [psgo](https://github.com/puregocore/psgo) - PureScript to Go compiler
+- [Node.js](https://nodejs.org/) 18+
 
 ### Building
 
 ```bash
 # Install dependencies
-spago install
+npm install
 
-# Build CLI
-purs compile --codegen corefn 'lib/**/*.purs' 'bin/purslint-cli/**/*.purs' '.spago/**/*.purs'
-psgo output/*/corefn.json
-cp output/Main/Main.go main_cli.go
-go build -o purelint main_cli.go
+# Build and bundle CLI + LSP
+npm run dist
 
-# Build LSP
-purs compile --codegen corefn 'lib/**/*.purs' 'bin/purslint-lsp/**/*.purs' '.spago/**/*.purs'
-psgo output/*/corefn.json
-cp output/Main/Main.go main_lsp.go
-go build -o purelint-lsp main_lsp.go
-
-# Build and run tests
-purs compile --codegen corefn 'lib/**/*.purs' 'test/**/*.purs' '.spago/**/*.purs'
-psgo output/*/corefn.json
-cp output/Test.Main/Test_Main.go test_main.go
-go build -o test-runner test_main.go
-./test-runner
+# Run tests
+npm test
 ```
 
 ## Usage
@@ -118,11 +109,12 @@ Create a `purelint.json` file in your project root:
 
 ## Architecture
 
-PureLint is written in PureScript and compiled to Go using `psgo` (purescript-native). This allows:
+PureLint is written in PureScript and compiled to JavaScript via
+`purs-backend-es`, then bundled for Node.js. This allows:
 
 - Full access to the PureScript CST parser (`purescript-language-cst-parser`)
-- Native binary performance
-- Easy distribution without runtime dependencies
+- Straightforward distribution via npm
+- A single runtime across CLI and LSP
 
 ### Project Structure
 
@@ -162,6 +154,8 @@ via the workflow dispatch.
 
 - `purescript-language-cst-parser` - PureScript CST parser
 - `purescript-lsp` - LSP protocol implementation (Go FFI)
+- `purs-backend-es` - PureScript to JavaScript backend
+- `esbuild` - Bundler for CLI and LSP
 
 ## License
 
