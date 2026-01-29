@@ -10,7 +10,7 @@
   </a>
 </p>
 
-A PureScript linter inspired by [hlint](https://github.com/ndmitchell/hlint), providing suggestions for cleaner, more idiomatic PureScript code.
+A PureScript linter.
 
 ## Install
 

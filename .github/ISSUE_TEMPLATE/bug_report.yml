@@ -1,0 +1,53 @@
+name: Bug report
+description: Report incorrect lint results with input and output.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug.
+        If possible, include a golden file with input, actual output, and expected output.
+  - type: textarea
+    id: input
+    attributes:
+      label: Input
+      description: |
+        Paste the input here (or attach a golden file and mention the filename).
+        Include any relevant configuration.
+      placeholder: |
+        ```purs
+        -- Your input code here
+        ```
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual output
+      description: Paste the current output from purslint.
+      placeholder: |
+        ```
+        -- Warnings, fixes, or logs
+        ```
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected output
+      description: Describe the expected output or behaviour.
+      placeholder: |
+        ```
+        -- Expected warnings, fixes, or logs
+        ```
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Additional context
+      description: Links, screenshots, or anything else helpful.
+    validations:
+      required: false
