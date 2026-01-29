@@ -4,7 +4,10 @@
   <img src="vscode-extension/purslint.jpg" alt="Purslint logo" width="180" />
 </p>
 <p align="center">
-  <video src="demo.mp4" width="480" controls playsinline></video>
+  <video width="480" controls playsinline>
+    <source src="https://github.com/user-attachments/assets/6d855014-18f5-4729-be28-e91ec2d19c8f" type="video/mp4" />
+    Your browser does not support the video tag. <a href="https://github.com/user-attachments/assets/6d855014-18f5-4729-be28-e91ec2d19c8f">Download the demo.</a>
+  </video>
 </p>
 
 A PureScript linter inspired by [hlint](https://github.com/ndmitchell/hlint), providing suggestions for cleaner, more idiomatic PureScript code.
@@ -25,37 +28,7 @@ npm install -g purslint
 purslint --help
 ```
 
-## Usage
-
-### CLI
-
-```bash
-# Lint a single file
-./purslint src/Main.purs
-
-# Lint multiple files
-./purslint src/*.purs
-
-# Lint with config file (optional)
-./purslint --config purslint.json src/*.purs
-```
-
-### LSP (Language Server Protocol)
-
-The LSP binary (`purslint-lsp`) provides IDE integration. It communicates via stdio using the standard LSP protocol.
-
-#### Zed Editor
-
-A Zed extension is available in the `zed-extension/` directory. To install:
-
-1. Open Zed
-2. Go to Extensions (Cmd+Shift+X)
-3. Click "Install Dev Extension"
-4. Select the `zed-extension/` directory
-
-The extension will automatically use the `purslint-lsp` binary.
-
-#### Neovim (nvim-lspconfig)
+### Neovim (nvim-lspconfig)
 
 After building `purslint-lsp` (see build steps below), you can configure Neovim like this:
 
@@ -76,6 +49,36 @@ If you prefer to run the bundled JS directly:
 ```lua
 cmd = { "node", "/path/to/dist/purslint-lsp.js" }
 ```
+
+### Zed Editor
+
+A Zed extension is available in the `zed-extension/` directory. To install:
+
+1. Open Zed
+2. Go to Extensions (Cmd+Shift+X)
+3. Click "Install Dev Extension"
+4. Select the `zed-extension/` directory
+
+The extension will automatically use the `purslint-lsp` binary.
+
+## Usage
+
+### CLI
+
+```bash
+# Lint a single file
+./purslint src/Main.purs
+
+# Lint multiple files
+./purslint src/*.purs
+
+# Lint with config file (optional)
+./purslint --config purslint.json src/*.purs
+```
+
+### LSP (Language Server Protocol)
+
+The LSP binary (`purslint-lsp`) provides IDE integration. It communicates via stdio using the standard LSP protocol.
 
 ## Features
 
