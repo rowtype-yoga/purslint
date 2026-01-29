@@ -4,7 +4,11 @@
   <img src="vscode-extension/purslint.jpg" alt="Purslint logo" width="180" />
 </p>
 
-https://github.com/user-attachments/assets/6d855014-18f5-4729-be28-e91ec2d19c8f
+<p align="center">
+  <a href="https://github.com/user-attachments/assets/6d855014-18f5-4729-be28-e91ec2d19c8f">
+    <img src="demo.gif" alt="Purslint demo" width="480" />
+  </a>
+</p>
 
 A PureScript linter inspired by [hlint](https://github.com/ndmitchell/hlint), providing suggestions for cleaner, more idiomatic PureScript code.
 
