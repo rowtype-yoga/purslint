@@ -12,6 +12,8 @@
 
 A PureScript linter.
 
+Purslint is very new and may have bugs, so please use an editor with undo functionality. :D
+
 ## Install
 
 ### VS Code (Marketplace)
