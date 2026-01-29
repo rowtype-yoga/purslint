@@ -1,0 +1,29 @@
+name: Publish Open VSX
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - run: npm install -g purescript@0.15.15
+      - run: npm install
+        working-directory: vscode-extension
+      - run: npx vsce package
+        working-directory: vscode-extension
+      - run: npx ovsx publish purelint-0.1.0.vsix -p "${OPENVSX_TOKEN}"
+        working-directory: vscode-extension
+        env:
+          OPENVSX_TOKEN: ${{ secrets.OPENVSX_TOKEN }}
