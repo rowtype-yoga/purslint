@@ -3,12 +3,8 @@
 <p align="center">
   <img src="vscode-extension/purslint.jpg" alt="Purslint logo" width="180" />
 </p>
-<p align="center">
-  <video width="480" controls playsinline>
-    <source src="https://github.com/user-attachments/assets/6d855014-18f5-4729-be28-e91ec2d19c8f" type="video/mp4" />
-    Your browser does not support the video tag. <a href="https://github.com/user-attachments/assets/6d855014-18f5-4729-be28-e91ec2d19c8f">Download the demo.</a>
-  </video>
-</p>
+
+https://github.com/user-attachments/assets/6d855014-18f5-4729-be28-e91ec2d19c8f
 
 A PureScript linter inspired by [hlint](https://github.com/ndmitchell/hlint), providing suggestions for cleaner, more idiomatic PureScript code.
 
