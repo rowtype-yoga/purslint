@@ -8,6 +8,7 @@ package:
     - foldable-traversable
     - maybe
     - newtype
+    - optparse
     - prelude
     - purslint
     - strings

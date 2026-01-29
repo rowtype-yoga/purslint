@@ -83,6 +83,7 @@
             "node-buffer",
             "node-fs",
             "node-process",
+            "optparse",
             "prelude",
             "purslint",
             "strings"
@@ -104,6 +105,7 @@
             "enums",
             "exceptions",
             "exists",
+            "exitcodes",
             "foldable-traversable",
             "foreign",
             "foreign-object",
@@ -130,6 +132,8 @@
             "now",
             "nullable",
             "numbers",
+            "open-memoize",
+            "optparse",
             "ordered-collections",
             "orders",
             "parallel",
@@ -233,10 +237,13 @@
             "either",
             "maybe",
             "newtype",
+            "optparse",
             "prelude",
             "purslint"
           ],
           "build_plan": [
+            "aff",
+            "arraybuffer-types",
             "arrays",
             "bifunctors",
             "catenable-lists",
@@ -244,13 +251,17 @@
             "const",
             "contravariant",
             "control",
+            "datetime",
             "distributive",
             "effect",
             "either",
             "enums",
             "exceptions",
             "exists",
+            "exitcodes",
             "foldable-traversable",
+            "foreign",
+            "foreign-object",
             "free",
             "functions",
             "functors",
@@ -263,11 +274,20 @@
             "lists",
             "maybe",
             "newtype",
+            "node-buffer",
+            "node-event-emitter",
+            "node-process",
+            "node-streams",
             "nonempty",
+            "nullable",
             "numbers",
+            "open-memoize",
+            "optparse",
             "ordered-collections",
             "orders",
+            "parallel",
             "partial",
+            "posix-types",
             "prelude",
             "profunctor",
             "purslint",
@@ -1075,6 +1095,14 @@
         "unsafe-coerce"
       ]
     },
+    "exitcodes": {
+      "type": "registry",
+      "version": "4.0.0",
+      "integrity": "sha256-4wxViTbyOoyKJ/WaRGI6+hZmgMKI5Miv16lSwefiLSM=",
+      "dependencies": [
+        "enums"
+      ]
+    },
     "foldable-traversable": {
       "type": "registry",
       "version": "6.0.0",
@@ -1456,6 +1484,59 @@
       "dependencies": [
         "functions",
         "maybe"
+      ]
+    },
+    "open-memoize": {
+      "type": "registry",
+      "version": "6.2.0",
+      "integrity": "sha256-p1m7wF3aHQ80yUvqMs20OTMl496WS6YpKlmI2Nkg9j0=",
+      "dependencies": [
+        "either",
+        "integers",
+        "lazy",
+        "lists",
+        "maybe",
+        "partial",
+        "prelude",
+        "strings",
+        "tuples"
+      ]
+    },
+    "optparse": {
+      "type": "registry",
+      "version": "5.0.1",
+      "integrity": "sha256-cEzEkNW4q0gZlXl4z0zn+H2vs6l2UAp7NPHCsois73k=",
+      "dependencies": [
+        "aff",
+        "arrays",
+        "bifunctors",
+        "console",
+        "control",
+        "effect",
+        "either",
+        "enums",
+        "exists",
+        "exitcodes",
+        "foldable-traversable",
+        "free",
+        "gen",
+        "integers",
+        "lazy",
+        "lists",
+        "maybe",
+        "newtype",
+        "node-buffer",
+        "node-process",
+        "node-streams",
+        "nonempty",
+        "numbers",
+        "open-memoize",
+        "partial",
+        "prelude",
+        "strings",
+        "tailrec",
+        "transformers",
+        "tuples"
       ]
     },
     "ordered-collections": {

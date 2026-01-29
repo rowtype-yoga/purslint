@@ -4,14 +4,20 @@ import Prelude
 
 import Data.Array as Array
 import Data.Either (Either(..))
+import Data.Enum (fromEnum)
 import Data.Foldable (for_)
 import Data.Maybe (Maybe(..))
 import Data.Newtype (unwrap)
 import Data.String.CodeUnits as String
+import Data.Tuple.Nested ((/\))
 import Effect (Effect)
 import Effect.Console (log)
 import Node.FS.Simple as FS
 import Node.CLI as Process
+import Options.Applicative (Parser, argument, execParserPure, fullDesc, header, help, helper, info, long, many, metavar, progDesc, str, switch, (<**>))
+import Options.Applicative.Builder (defaultPrefs)
+import Options.Applicative.Types (CompletionResult(..), ParserFailure(ParserFailure), ParserResult(..))
+import Options.Applicative.Help.Types (ParserHelp(ParserHelp), renderHelp)
 import Purslint.Config (defaultConfig, filterRules, parseConfig)
 import Purslint.Fix (applyAllFixes)
 import Purslint.Rule (Rule)
@@ -98,6 +104,13 @@ import Purslint.Rules.WhenNot (whenNotRule)
 import Purslint.Rules.RedundantParens (redundantParensRule)
 import Purslint.Runner (runRules)
 import Purslint.Types (LintResult(..), LintWarning(..), Severity(..), SourceCode(..), Suggestion(..))
+
+type CliOptions =
+  { fix :: Boolean
+  , listRules :: Boolean
+  , initConfig :: Boolean
+  , paths :: Array String
+  }
 
 -- | All available rules (81 total)
 allRules :: Array Rule
@@ -337,38 +350,70 @@ initConfig = do
     FS.writeTextFile ".purslintrc" sampleConfig
     log "Created .purslintrc"
 
+parseFlags :: Array String -> Effect (Maybe CliOptions)
+parseFlags args = case parseFlags' (Array.drop 2 args) of
+  Success cli -> pure (Just cli)
+  Failure (ParserFailure pf) -> case pf programName of
+    ph@(ParserHelp _) /\ exitCode /\ i /\ _unit -> do
+      log $ renderHelp i ph
+      Process.exit (fromEnum exitCode)
+      pure Nothing
+  CompletionInvoked (CompletionResult { execCompletion }) -> do
+    executedCompletion <- execCompletion programName
+    log executedCompletion
+    Process.exit 0
+    pure Nothing
+  where
+  programName = "purslint"
+
+parseFlags' :: Array String -> ParserResult CliOptions
+parseFlags' = execParserPure defaultPrefs opts
+  where
+  opts =
+    info (flagsParser <**> helper) $
+      fullDesc
+        <> progDesc "Lint PureScript source files"
+        <> header "purslint - a linter for PureScript"
+
+flagsParser :: Parser CliOptions
+flagsParser = ado
+  fix <- switch $ long "fix" <> help "Auto-fix issues (where possible)"
+  listRules <- switch $ long "list" <> help "List all available rules"
+  initConfig <- switch $ long "init" <> help "Create a sample .purslintrc"
+  pathsList <- many $ argument str $ metavar "PATH..."
+  let paths = Array.fromFoldable pathsList
+  in { fix, listRules, initConfig, paths }
+
 main :: Effect Unit
 main = do
   args <- Process.argv
-  -- args[0] is node, args[1] is the script, args[2..] are the actual arguments
-  let userArgs = Array.drop 1 args
-  case userArgs of
-    [] -> showUsage
-    ["--help"] -> showUsage
-    ["-h"] -> showUsage
-    ["--list"] -> listRules
-    ["--init"] -> initConfig
-    _ -> do
-      -- Check for --fix flag
-      let hasFix = Array.elem "--fix" userArgs
-      let paths = Array.filter (\a -> a /= "--fix") userArgs
-      
-      -- Load config and filter rules
-      config <- loadConfig
-      let enabledRules = filterRules allRules config
-      
-      if hasFix then do
-        -- Fix mode
-        _ <- Array.foldM (\acc path -> do
-          count <- fixPath enabledRules path
-          pure (acc + count)) 0 paths
-        pure unit
+  maybeCli <- parseFlags args
+  case maybeCli of
+    Nothing -> pure unit
+    Just cli ->
+      if cli.listRules then
+        listRules
+      else if cli.initConfig then
+        initConfig
+      else if Array.null cli.paths then
+        showUsage
       else do
-        -- Lint mode
-        totalWarnings <- Array.foldM (\acc path -> do
-          count <- lintPathWithConfig enabledRules path
-          pure (acc + count)) 0 paths
-        when (totalWarnings > 0) do
-          log ""
-          log $ "Total: " <> show totalWarnings <> " warning" <> if totalWarnings == 1 then "" else "s"
-          Process.exit 1
+        -- Load config and filter rules
+        config <- loadConfig
+        let enabledRules = filterRules allRules config
+
+        if cli.fix then do
+          -- Fix mode
+          _ <- Array.foldM (\acc path -> do
+            count <- fixPath enabledRules path
+            pure (acc + count)) 0 cli.paths
+          pure unit
+        else do
+          -- Lint mode
+          totalWarnings <- Array.foldM (\acc path -> do
+            count <- lintPathWithConfig enabledRules path
+            pure (acc + count)) 0 cli.paths
+          when (totalWarnings > 0) do
+            log ""
+            log $ "Total: " <> show totalWarnings <> " warning" <> if totalWarnings == 1 then "" else "s"
+            Process.exit 1
