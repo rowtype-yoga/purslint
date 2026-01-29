@@ -3,7 +3,7 @@
   "displayName": "Purelint",
   "description": "PureScript linter inspired by hlint",
   "version": "0.1.0",
-  "publisher": "purelint",
+  "publisher": "RowtypeYoga",
   "engines": {
     "vscode": "^1.85.0"
   },
