@@ -1,5 +1,7 @@
 # PureLint
 
+![Purslint logo](vscode-extension/purslint.jpg)
+
 A PureScript linter inspired by [hlint](https://github.com/ndmitchell/hlint), providing suggestions for cleaner, more idiomatic PureScript code.
 
 ## Features
