@@ -1,8 +1,8 @@
 {
-  "name": "purelint",
-  "displayName": "Purelint",
+  "name": "purslint",
+  "displayName": "Purslint",
   "description": "PureScript linter inspired by hlint",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "RowtypeYoga",
   "engines": {
     "vscode": "^1.85.0"
@@ -18,17 +18,17 @@
   "contributes": {
     "configuration": {
       "type": "object",
-      "title": "Purelint",
+      "title": "Purslint",
       "properties": {
-        "purelint.enable": {
+        "purslint.enable": {
           "type": "boolean",
           "default": true,
-          "description": "Enable/disable purelint"
+          "description": "Enable/disable purslint"
         },
-        "purelint.serverPath": {
+        "purslint.serverPath": {
           "type": "string",
           "default": "",
-          "description": "Path to purelint-lsp executable (uses bundled version if empty)"
+          "description": "Path to purslint-lsp executable (uses bundled version if empty)"
         }
       }
     }

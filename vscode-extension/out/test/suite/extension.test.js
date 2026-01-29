@@ -36,13 +36,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const assert = __importStar(require("assert"));
 const vscode = __importStar(require("vscode"));
 const path = __importStar(require("path"));
-suite('Purelint Extension Test Suite', () => {
+suite('Purslint Extension Test Suite', () => {
     vscode.window.showInformationMessage('Start all tests.');
     test('Extension should be present', () => {
-        assert.ok(vscode.extensions.getExtension('purelint.purelint'));
+        assert.ok(vscode.extensions.getExtension('RowtypeYoga.purslint'));
     });
     test('Extension should activate on PureScript file', async () => {
-        const ext = vscode.extensions.getExtension('purelint.purelint');
+        const ext = vscode.extensions.getExtension('RowtypeYoga.purslint');
         assert.ok(ext);
         // Open a PureScript file to trigger activation
         const testFile = path.join(__dirname, '../../../test-workspace/Test.purs');
@@ -54,7 +54,7 @@ suite('Purelint Extension Test Suite', () => {
         assert.ok(ext.isActive);
     });
     test('Should provide code actions', async () => {
-        const ext = vscode.extensions.getExtension('purelint.purelint');
+        const ext = vscode.extensions.getExtension('RowtypeYoga.purslint');
         if (!ext?.isActive) {
             await ext?.activate();
         }

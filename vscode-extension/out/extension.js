@@ -39,7 +39,7 @@ const vscode = __importStar(require("vscode"));
 const node_1 = require("vscode-languageclient/node");
 let client;
 function activate(context) {
-    const config = vscode.workspace.getConfiguration('purelint');
+    const config = vscode.workspace.getConfiguration('purslint');
     if (!config.get('enable', true)) {
         return;
     }
@@ -65,7 +65,7 @@ function activate(context) {
             fileEvents: vscode.workspace.createFileSystemWatcher('**/*.purs')
         }
     };
-    client = new node_1.LanguageClient('purelint', 'Purelint', serverOptions, clientOptions);
+    client = new node_1.LanguageClient('purslint', 'Purslint', serverOptions, clientOptions);
     client.start();
 }
 function deactivate() {

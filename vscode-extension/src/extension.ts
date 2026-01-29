@@ -10,7 +10,7 @@ import {
 let client: LanguageClient | undefined;
 
 export function activate(context: vscode.ExtensionContext) {
-  const config = vscode.workspace.getConfiguration('purelint');
+  const config = vscode.workspace.getConfiguration('purslint');
   
   if (!config.get<boolean>('enable', true)) {
     return;
@@ -42,8 +42,8 @@ export function activate(context: vscode.ExtensionContext) {
   };
 
   client = new LanguageClient(
-    'purelint',
-    'Purelint',
+    'purslint',
+    'Purslint',
     serverOptions,
     clientOptions
   );
