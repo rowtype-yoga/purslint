@@ -208,7 +208,7 @@ warningToDiagnostic (LintWarning w) =
     base =
       { range: range
       , severity: severityToLSP w.severity
-      , source: "purelint"
+      , source: "purslint"
       , message: unwrap w.ruleId <> ": " <> unwrap w.message
       }
   in case w.suggestion of
@@ -216,7 +216,7 @@ warningToDiagnostic (LintWarning w) =
     Just (Suggestion sug) -> unsafeCoerce
       { range: range
       , severity: severityToLSP w.severity
-      , source: "purelint"
+      , source: "purslint"
       , message: unwrap w.ruleId <> ": " <> unwrap w.message
       , data:
           { hasFix: true
@@ -273,7 +273,7 @@ mkInitializeResponse reqId =
                 }
             }
         , serverInfo:
-            { name: "purelint-lsp"
+            { name: "purslint-lsp"
             , version: "0.1.0"
             }
         }
@@ -334,32 +334,32 @@ foreign import hasKey :: String -> Foreign -> Boolean
 foreign import getKey :: String -> Foreign -> Foreign
 
 -- | Parse settings to get disabled rules
--- | Expected format: { "purelint": { "disabledRules": ["RuleId1", "RuleId2"] } }
--- | Or: { "purelint.disabledRules": ["RuleId1", "RuleId2"] }
--- | Or: { "purelint.enabled": false } to disable all rules
+-- | Expected format: { "purslint": { "disabledRules": ["RuleId1", "RuleId2"] } }
+-- | Or: { "purslint.disabledRules": ["RuleId1", "RuleId2"] }
+-- | Or: { "purslint.enabled": false } to disable all rules
 parseSettings :: Foreign -> Config
 parseSettings settings =
-  -- Try to get purelint.enabled first
-  case getFieldObj "purelint" settings of
-    Just purelintObj ->
+  -- Try to get purslint.enabled first
+  case getFieldObj "purslint" settings of
+    Just purslintObj ->
       -- Check if all rules are disabled
-      case getFieldBool "enabled" purelintObj of
+      case getFieldBool "enabled" purslintObj of
         Just false -> 
           { disabledRules: map (\r -> r.ruleId) allRules }  -- Disable all rules
         _ ->
           -- Get disabled rules list
-          case getFieldArr "disabledRules" purelintObj of
+          case getFieldArr "disabledRules" purslintObj of
             Just arr -> 
               { disabledRules: Array.mapMaybe parseRuleId arr }
             Nothing -> defaultConfig
     Nothing ->
-      -- Try flat format: purelint.disabledRules
-      case getFieldArr "purelint.disabledRules" settings of
+      -- Try flat format: purslint.disabledRules
+      case getFieldArr "purslint.disabledRules" settings of
         Just arr -> 
           { disabledRules: Array.mapMaybe parseRuleId arr }
         Nothing ->
-          -- Try purelint.enabled
-          case getFieldBool "purelint.enabled" settings of
+          -- Try purslint.enabled
+          case getFieldBool "purslint.enabled" settings of
             Just false -> 
               { disabledRules: map (\r -> r.ruleId) allRules }
             _ -> defaultConfig
@@ -616,7 +616,7 @@ mkDisableRuleAction ruleId diagnostic =
     , isPreferred: false
     , command:
         { title: "Disable rule " <> ruleId
-        , command: "purelint.disableRule"
+        , command: "purslint.disableRule"
         , arguments: [ruleId]
         }
     }
@@ -644,7 +644,7 @@ mainLoop stateRef = do
 
 main :: Effect Unit
 main = do
-  Stdio.logMessage "purelint-lsp starting..."
+  Stdio.logMessage "purslint-lsp starting..."
   stateRef <- Ref.new { config: defaultConfig, documents: Map.empty }
   mainLoop stateRef
-  Stdio.logMessage "purelint-lsp exiting"
+  Stdio.logMessage "purslint-lsp exiting"

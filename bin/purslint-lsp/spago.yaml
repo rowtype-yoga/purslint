@@ -1,5 +1,5 @@
 package:
-  name: purelint-lsp
+  name: purslint-lsp
   dependencies:
     - arrays
     - effect
@@ -8,5 +8,5 @@ package:
     - maybe
     - newtype
     - prelude
-    - purelint
+    - purslint
     - unsafe-coerce

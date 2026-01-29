@@ -1,7 +1,7 @@
 {
   "workspace": {
     "packages": {
-      "purelint": {
+      "purslint": {
         "path": "lib/purslint",
         "core": {
           "dependencies": [
@@ -69,7 +69,7 @@
           "build_plan": []
         }
       },
-      "purelint-cli": {
+      "purslint-cli": {
         "path": "bin/purslint-cli",
         "core": {
           "dependencies": [
@@ -84,7 +84,7 @@
             "node-fs",
             "node-process",
             "prelude",
-            "purelint",
+            "purslint",
             "strings"
           ],
           "build_plan": [
@@ -137,7 +137,7 @@
             "posix-types",
             "prelude",
             "profunctor",
-            "purelint",
+            "purslint",
             "refs",
             "safe-coerce",
             "st",
@@ -156,7 +156,7 @@
           "build_plan": []
         }
       },
-      "purelint-lsp": {
+      "purslint-lsp": {
         "path": "bin/purslint-lsp",
         "core": {
           "dependencies": [
@@ -167,7 +167,7 @@
             "maybe",
             "newtype",
             "prelude",
-            "purelint",
+            "purslint",
             "unsafe-coerce"
           ],
           "build_plan": [
@@ -204,7 +204,7 @@
             "partial",
             "prelude",
             "profunctor",
-            "purelint",
+            "purslint",
             "refs",
             "safe-coerce",
             "st",
@@ -223,7 +223,7 @@
           "build_plan": []
         }
       },
-      "purelint-tests": {
+      "purslint-tests": {
         "path": "./",
         "core": {
           "dependencies": [
@@ -234,7 +234,7 @@
             "maybe",
             "newtype",
             "prelude",
-            "purelint"
+            "purslint"
           ],
           "build_plan": [
             "arrays",
@@ -270,7 +270,7 @@
             "partial",
             "prelude",
             "profunctor",
-            "purelint",
+            "purslint",
             "refs",
             "safe-coerce",
             "st",

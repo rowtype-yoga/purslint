@@ -74,7 +74,7 @@ export const writeMessage = (msg) => () => {
 
 // Log a message to stderr (for debugging)
 export const logMessage = (msg) => () => {
-  process.stderr.write('[purelint-lsp] ' + msg + '\n');
+  process.stderr.write('[purslint-lsp] ' + msg + '\n');
 };
 
 // Parse JSON string to Foreign (returns Maybe Foreign)

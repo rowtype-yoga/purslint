@@ -1,5 +1,5 @@
 package:
-  name: purelint
+  name: purslint
   dependencies:
     - arrays
     - effect

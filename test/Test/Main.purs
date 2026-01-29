@@ -175,7 +175,7 @@ assertFixFormatted name rules source expectedFixed =
 -- | Run all tests and report results
 main :: Effect Unit
 main = do
-  log "Running purelint tests...\n"
+  log "Running purslint tests...\n"
   
   let results = mapIdentityTests 
              <> mapFusionTests

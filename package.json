@@ -4,15 +4,15 @@
   "description": "A linter for PureScript",
   "type": "module",
   "bin": {
-    "purelint": "./bin/purelint.js",
-    "purelint-lsp": "./bin/purelint-lsp.js"
+    "purslint": "./bin/purslint.js",
+    "purslint-lsp": "./bin/purslint-lsp.js"
   },
   "scripts": {
-    "build:cli": "spago build -p purelint-cli --output output-cli",
-    "build:lsp": "spago build -p purelint-lsp --output output-lsp",
+    "build:cli": "spago build -p purslint-cli --output output-cli",
+    "build:lsp": "spago build -p purslint-lsp --output output-lsp",
     "build": "npm run build:cli && npm run build:lsp",
-    "bundle:cli": "purs-backend-es bundle-app --corefn-dir output-cli --main Main --platform node --to dist/purelint.js --int-tags",
-    "bundle:lsp": "purs-backend-es bundle-app --corefn-dir output-lsp --main Main.LSP --platform node --to dist/purelint-lsp.js --int-tags",
+    "bundle:cli": "purs-backend-es bundle-app --corefn-dir output-cli --main Main --platform node --to dist/purslint.js --int-tags",
+    "bundle:lsp": "purs-backend-es bundle-app --corefn-dir output-lsp --main Main.LSP --platform node --to dist/purslint-lsp.js --int-tags",
     "bundle": "npm run bundle:cli && npm run bundle:lsp",
     "dist": "npm run build && npm run bundle",
     "test": "spago test",

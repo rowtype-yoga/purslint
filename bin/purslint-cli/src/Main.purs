@@ -185,12 +185,12 @@ allRules =
   , whenNotRule
   ]
 
--- | Load config from .purelintrc file
+-- | Load config from .purslintrc file
 loadConfig :: Effect _ 
 loadConfig = do
-  hasConfig <- FS.exists ".purelintrc"
+  hasConfig <- FS.exists ".purslintrc"
   if hasConfig then do
-    content <- FS.readTextFile ".purelintrc"
+    content <- FS.readTextFile ".purslintrc"
     pure $ parseConfig content
   else
     pure defaultConfig
@@ -294,24 +294,24 @@ fixPath rules path = do
 -- | Show usage
 showUsage :: Effect Unit
 showUsage = do
-  log "purelint - a linter for PureScript (70 rules)"
+  log "purslint - a linter for PureScript (81 rules)"
   log ""
-  log "Usage: purelint [OPTIONS] [FILES/DIRECTORIES...]"
+  log "Usage: purslint [OPTIONS] [FILES/DIRECTORIES...]"
   log ""
   log "Options:"
   log "  --help     Show this help"
   log "  --fix      Auto-fix issues (where possible)"
-  log "  --init     Create a sample .purelintrc"
+  log "  --init     Create a sample .purslintrc"
   log "  --list     List all available rules"
   log ""
   log "Configuration:"
-  log "  Create .purelintrc in your project root to disable rules."
+  log "  Create .purslintrc in your project root to disable rules."
   log "  Add one rule name per line (lines starting with # are comments)."
   log ""
   log "Examples:"
-  log "  purelint src/             Lint all .purs files in src/"
-  log "  purelint --fix src/       Auto-fix issues in src/"
-  log "  purelint src/Main.purs    Lint a single file"
+  log "  purslint src/             Lint all .purs files in src/"
+  log "  purslint --fix src/       Auto-fix issues in src/"
+  log "  purslint src/Main.purs    Lint a single file"
 
 -- | List all available rules
 listRules :: Effect Unit
@@ -324,18 +324,18 @@ listRules = do
 -- | Create sample config file
 initConfig :: Effect Unit
 initConfig = do
-  hasConfig <- FS.exists ".purelintrc"
+  hasConfig <- FS.exists ".purslintrc"
   if hasConfig then
-    log ".purelintrc already exists"
+    log ".purslintrc already exists"
   else do
-    let sampleConfig = """# purelint configuration
+    let sampleConfig = """# purslint configuration
 # Add rule names (one per line) to disable them
 # Example:
 # EtaReduce
 # LetToWhere
 """
-    FS.writeTextFile ".purelintrc" sampleConfig
-    log "Created .purelintrc"
+    FS.writeTextFile ".purslintrc" sampleConfig
+    log "Created .purslintrc"
 
 main :: Effect Unit
 main = do

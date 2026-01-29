@@ -1,10 +1,10 @@
 use zed_extension_api::{self as zed, Result};
 
-struct PurelintExtension;
+struct PurslintExtension;
 
-impl zed::Extension for PurelintExtension {
+impl zed::Extension for PurslintExtension {
     fn new() -> Self {
-        PurelintExtension
+        PurslintExtension
     }
 
     fn language_server_command(
@@ -13,11 +13,11 @@ impl zed::Extension for PurelintExtension {
         _worktree: &zed::Worktree,
     ) -> Result<zed::Command> {
         Ok(zed::Command {
-            command: "/Users/mark/Developer/purelint/purelint-lsp".to_string(),
+            command: "purslint-lsp".to_string(),
             args: vec![],
             env: Default::default(),
         })
     }
 }
 
-zed::register_extension!(PurelintExtension);
+zed::register_extension!(PurslintExtension);

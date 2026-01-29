@@ -4,7 +4,7 @@ workspace:
   extraPackages: {}
 
 package:
-  name: purelint-tests
+  name: purslint-tests
   dependencies:
     - console
     - effect
@@ -12,7 +12,7 @@ package:
     - maybe
     - newtype
     - prelude
-    - purelint
+    - purslint
     - arrays
   test:
     main: Test.Main

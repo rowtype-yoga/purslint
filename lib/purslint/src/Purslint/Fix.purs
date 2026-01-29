@@ -71,8 +71,9 @@ applyFix :: String -> LintWarning -> Maybe String
 applyFix source (LintWarning w) = do
   Suggestion s <- w.suggestion
   let replacement = s.replacement # un ReplacementText
-  let { source: updatedSource, replacement: updatedReplacement, linesAdded } =
-        processImports source replacement s.requiredImports
+  let
+    { source: updatedSource, replacement: updatedReplacement, linesAdded } =
+      processImports source replacement s.requiredImports
   let shiftedRange = shiftRange linesAdded w.range
   Just $ replaceRange updatedSource shiftedRange updatedReplacement
 
@@ -101,13 +102,15 @@ applyAllFixes source (LintResult result) =
     else case w.suggestion of
       Nothing -> acc
       Just (Suggestion s) ->
-        let replacement = s.replacement # un ReplacementText
-            importResult = processImports acc.source replacement s.requiredImports
-            shiftedRange = shiftRange importResult.linesAdded w.range
-            updatedSource = replaceRange importResult.source shiftedRange importResult.replacement
-        in { source: updatedSource
-           , appliedRanges: Array.cons shiftedRange acc.appliedRanges
-           }
+        let
+          replacement = s.replacement # un ReplacementText
+          importResult = processImports acc.source replacement s.requiredImports
+          shiftedRange = shiftRange importResult.linesAdded w.range
+          updatedSource = replaceRange importResult.source shiftedRange importResult.replacement
+        in
+          { source: updatedSource
+          , appliedRanges: Array.cons shiftedRange acc.appliedRanges
+          }
 
   -- Check if two ranges overlap
   overlaps :: SourceRange -> SourceRange -> Boolean

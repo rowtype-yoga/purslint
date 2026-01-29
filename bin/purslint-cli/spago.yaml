@@ -1,5 +1,5 @@
 package:
-  name: purelint-cli
+  name: purslint-cli
   dependencies:
     - arrays
     - console
@@ -9,7 +9,7 @@ package:
     - maybe
     - newtype
     - prelude
-    - purelint
+    - purslint
     - strings
     - node-buffer
     - node-fs

@@ -19,8 +19,8 @@ export function activate(context: vscode.ExtensionContext) {
   // Get server path from config or use default
   let serverPath = config.get<string>('serverPath', '');
   if (!serverPath) {
-    // Default to the purelint project location
-    serverPath = '/Users/mark/Developer/purelint/dist/purelint-lsp.js';
+    // Default to the purslint project location
+    serverPath = '/Users/mark/Developer/purslint/dist/purslint-lsp.js';
   }
 
   const serverOptions: ServerOptions = {
