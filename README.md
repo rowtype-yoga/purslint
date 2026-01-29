@@ -1,7 +1,7 @@
 # Purslint
 
 <p align="center">
-  <img src="vscode-extension/purslint.jpg" alt="Purslint logo" width="180" />
+  <img src="vscode-extension/purslint.png" alt="Purslint logo" width="180" />
 </p>
 
 <p align="center">

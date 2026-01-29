@@ -4,7 +4,7 @@
   "description": "PureScript linter inspired by hlint",
   "version": "0.1.1",
   "publisher": "RowtypeYoga",
-  "icon": "purslint.jpg",
+  "icon": "purslint.png",
   "engines": {
     "vscode": "^1.85.0"
   },
